@@ -51,7 +51,6 @@ import {
     DimensionId,
     DistanceSortedActor,
     EntityContext,
-    EntityContextBase,
     EntityRefTraits,
     ItemActor,
     Mob,
@@ -1645,23 +1644,31 @@ class UserEntityIdentifierComponent extends NativeClass {
     certificate: Certificate; // it's ExtendedCertificate actually
 }
 
-EntityContext.prototype.isValid = (EntityContextBase.prototype as any).isValid = procHacker.js("?isValid@EntityContext@@QEBA_NXZ", bool_t, {
-    this: EntityContextBase,
+EntityContext.prototype.isValid = procHacker.js("?isValid@EntityContext@@QEBA_NXZ", bool_t, {
+    this: EntityContext,
+});
+EntityContext.prototype._enttRegistry = procHacker.js("?_registry@EntityContext@@QEBAAEAVEntityRegistry@@XZ", VoidPointer, {
+    this: EntityContext,
+});
+EntityContext.prototype._getEntityId = procHacker.js("?_getEntityId@EntityContext@@IEBA?AVEntityId@@XZ", VoidPointer, {
+    this: EntityContext,
+    structureReturn: true,
 });
 
-const Registry_getEntityIdentifierComponent = procHacker.js(
-    "??$try_get@VUserEntityIdentifierComponent@@@?$basic_registry@VEntityId@@V?$allocator@VEntityId@@@std@@@entt@@QEAA?A_PVEntityId@@@Z",
+const TryGetUserEntityIdComponent = procHacker.js(
+    "??$tryGetComponent@VUserEntityIdentifierComponent@@@Actor@@QEAAPEAVUserEntityIdentifierComponent@@XZ",
     UserEntityIdentifierComponent,
     null,
-    VoidPointer,
-    int32_t.ref(),
+    Actor,
 );
 
+/**
+ * ~1.20.50 implementing part of ServerNetworkHandler::_displayGameMessage
+ * 1.20.50~ aspiring from existing, get components manually
+ */
 Player.prototype.getCertificate = function () {
     // part of ServerNetworkHandler::_displayGameMessage
-    const base = this.ctxbase;
-    const registry = base.enttRegistry;
-    return Registry_getEntityIdentifierComponent(registry, base.entityId).certificate;
+    return TryGetUserEntityIdComponent(this).certificate;
 };
 Player.prototype.getDestroySpeed = procHacker.js("?getDestroySpeed@Player@@QEBAMAEBVBlock@@@Z", float32_t, { this: Player }, Block.ref());
 Player.prototype.canDestroy = procHacker.js("?canDestroy@Player@@QEBA_NAEBVBlock@@@Z", bool_t, { this: Player }, Block.ref());
@@ -1687,10 +1694,7 @@ Player.prototype.getXuid = procHacker.js("?getXuid@Player@@UEBA?AV?$basic_string
     structureReturn: true,
 });
 Player.prototype.getUuid = function () {
-    const base = this.ctxbase;
-    if (!base.isValid()) throw Error(`EntityContextBase is not valid`);
-    const registry = base._enttRegistry();
-    return Registry_getEntityIdentifierComponent(registry, base.entityId).uuid;
+    return TryGetUserEntityIdComponent(this).uuid;
 };
 Player.prototype.forceAllowEating = procHacker.js("?forceAllowEating@Player@@QEBA_NXZ", bool_t, { this: Player });
 Player.prototype.getSpeed = procHacker.js("?getSpeed@Player@@UEBAMXZ", float32_t, { this: Player });
@@ -1731,13 +1735,12 @@ ServerPlayer.prototype.nextContainerCounter = procHacker.js("?_nextContainerCoun
 ServerPlayer.prototype.openInventory = procHacker.js("?openInventory@ServerPlayer@@UEAAXXZ", void_t, { this: ServerPlayer });
 ServerPlayer.prototype.resendAllChunks = procHacker.js("?resendAllChunks@Player@@QEAAXXZ", void_t, { this: ServerPlayer });
 ServerPlayer.prototype.sendNetworkPacket = procHacker.js("?sendNetworkPacket@ServerPlayer@@UEBAXAEAVPacket@@@Z", void_t, { this: ServerPlayer }, Packet);
+/**
+ * ~1.20.50 implementing part of ServerPlayer::sendNetworkPacket
+ * 1.20.50~ aspiring from existing, get components manually
+ */
 ServerPlayer.prototype.getNetworkIdentifier = function () {
-    // part of ServerPlayer::sendNetworkPacket
-    const base = this.ctxbase;
-    if (!base.isValid()) throw Error(`EntityContextBase is not valid`);
-    const registry = base._enttRegistry();
-    const res = Registry_getEntityIdentifierComponent(registry, base.entityId);
-    return res.networkIdentifier;
+    return TryGetUserEntityIdComponent(this).networkIdentifier;
 };
 ServerPlayer.prototype.setArmor = procHacker.js("?setArmor@ServerPlayer@@UEAAXW4ArmorSlot@@AEBVItemStack@@@Z", void_t, { this: ServerPlayer }, uint32_t, ItemStack);
 ServerPlayer.prototype.getInputMode = function () {

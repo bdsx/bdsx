@@ -502,7 +502,7 @@ export class OwnerStorageEntity extends AbstractClass {
     }
 }
 
-@nativeClass(0x18)
+@nativeClass(0x20)
 export class EntityRefTraits extends AbstractClass {
     @nativeField(OwnerStorageEntity)
     context: OwnerStorageEntity;
@@ -521,11 +521,15 @@ export class WeakEntityRef extends AbstractClass {
     }
 }
 
+// class EntityId, naming to avoid symbol overlap
+// @nativeClass(0x8)
+// class WrappedEntityId extends NativeClass {}
+
 @nativeClass(null)
-export class EntityContextBase extends AbstractClass {
+export class EntityContext extends AbstractClass {
     @nativeField(VoidPointer.ref())
     enttRegistry: VoidPointer; // accessed on ServerNetworkHandler::_displayGameMessage
-    @nativeField(int32_t)
+    @nativeField(int32_t, 0x10)
     entityId: int32_t;
 
     isValid(): boolean {
@@ -536,16 +540,24 @@ export class EntityContextBase extends AbstractClass {
         return this.isValid();
     }
     _enttRegistry(): VoidPointer {
-        return this.enttRegistry;
+        abstract();
+    }
+    /**
+     * Returns copied EntityId
+     */
+    _getEntityId(): VoidPointer /** WrappedEntityId */ {
+        abstract();
     }
 }
 
-@nativeClass(null)
-export class EntityContext extends EntityContextBase {}
+/** @deprecated merged into EntityContextBase */
+export const EntityContextBase = EntityContext;
+/** @deprecated merged into EntityContextBase */
+export type EntityContextBase = EntityContext;
 
 export class Actor extends AbstractClass {
     vftable: VoidPointer;
-    ctxbase: EntityContextBase;
+    ctxbase: EntityContext;
     /** @deprecated use {@link getIdentifier()} instead */
     get identifier(): EntityId {
         return this.getIdentifier();
