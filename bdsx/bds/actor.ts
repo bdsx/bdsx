@@ -550,9 +550,9 @@ export class EntityContext extends AbstractClass {
     }
 }
 
-/** @deprecated merged into EntityContextBase */
+/** @deprecated merged into EntityContext */
 export const EntityContextBase = EntityContext;
-/** @deprecated merged into EntityContextBase */
+/** @deprecated merged into EntityContext */
 export type EntityContextBase = EntityContext;
 
 export class Actor extends AbstractClass {
