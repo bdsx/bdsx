@@ -901,7 +901,7 @@ export class SetPlayerGameTypePacket extends Packet {
     playerGameType: GameType;
 }
 
-@nativeClass(0x2f0)
+@nativeClass(0x2e8)
 export class PlayerListEntry extends AbstractClass {
     @nativeField(ActorUniqueID)
     id: ActorUniqueID;
