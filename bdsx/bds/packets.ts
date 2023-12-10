@@ -1,5 +1,5 @@
 import { abstract, BuildPlatform } from "../common";
-import { VoidPointer } from "../core";
+import { StaticPointer, VoidPointer } from "../core";
 import { CxxPair } from "../cxxpair";
 import { CxxVector } from "../cxxvector";
 import { mce } from "../mce";
@@ -20,6 +20,7 @@ import {
     uint64_as_float_t,
     uint8_t,
 } from "../nativetype";
+import { procHacker } from "../prochacker";
 import { ActorDefinitionIdentifier, ActorLink, ActorRuntimeID, ActorUniqueID } from "./actor";
 import { AttributeInstanceHandle } from "./attribute";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "./blockpos";
@@ -926,6 +927,13 @@ export class PlayerListEntry extends AbstractClass {
         return PlayerListEntry.constructWith(player);
     }
 }
+PlayerListEntry.prototype[NativeType.dtor] = procHacker.js("??1PlayerListEntry@@QEAA@XZ", VoidPointer, { this: PlayerListEntry });
+PlayerListEntry.prototype[NativeType.ctor] = procHacker.js("??0PlayerListEntry@@QEAA@XZ", VoidPointer, { this: PlayerListEntry });
+PlayerListEntry.prototype[NativeType.ctor_copy] = function (from) {
+    ConstructPlayerListEntryByUUID(this, from.add(PLAYERLISTENTRY_UUID_OFFSET));
+};
+const PLAYERLISTENTRY_UUID_OFFSET = PlayerListEntry.offsetOf("uuid");
+const ConstructPlayerListEntryByUUID = procHacker.js("??0PlayerListEntry@@QEAA@VUUID@mce@@@Z", VoidPointer, null, PlayerListEntry, StaticPointer);
 
 @nativeClass(null)
 export class PlayerListPacket extends Packet {
