@@ -621,6 +621,13 @@ export class Player extends Mob implements HasStorage {
     }
 
     /**
+     * Updates player armor slots
+     */
+    sendArmor(value: number = 0b1111): void {
+        abstract();
+    }
+
+    /**
      * Sends a chat-like message to the player
      * @remarks The message will have this format : <author> message
      *
