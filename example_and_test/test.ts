@@ -1132,6 +1132,7 @@ Tester.concurrency(
                     const player = ev.player;
                     try {
                         this.equals(player.playerUIContainer.vftable, proc["??_7PlayerUIContainer@@6B@"], "player.playerUIContainer is broken");
+                        this.equals(player.getInventory().container.vftable, proc["??_7Inventory@@6B@"], "PlayerInventory.container is broken");
                         const netId = player.getNetworkIdentifier();
                         this.equals(player.deviceId, bedrockServer.serverNetworkHandler.fetchConnectionRequest(netId).getDeviceId(), "player.deviceId is broken");
 
