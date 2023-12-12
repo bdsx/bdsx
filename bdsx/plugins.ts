@@ -257,7 +257,7 @@ export async function loadAllPlugins(): Promise<void> {
                         console.log(colors.yellow(`[BDSX-Plugins] ${pkg.name} - ${message}`));
                     }
 
-                    require(path.resolve(pkg.getJsonPath(), "../"));
+                    require(path.dirname(pkg.getJsonPath()));
                     loadedPlugins.push(pkg.name);
                     loadedPackages.push({
                         name: pkg.name,
