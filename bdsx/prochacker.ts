@@ -218,6 +218,25 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param subject name of hooking
      * @param key target symbol
      * @param offset offset from target
+     * @param originalCode old codes
+     * @param ignoreArea pairs of offset, ignores partial bytes.
+     */
+    verify(
+        subject: string,
+        key: Extract<keyof T, string>,
+        offset: number,
+        originalCode: (number | null)[],
+        ignoreAreaOrOpts?: number[] | ProcHackerPatchOptions,
+    ): boolean {
+        const ptr = this._get(subject, key, offset);
+        if (ptr === null) return false;
+        return this.check(subject, key, offset, ptr, originalCode, ignoreAreaOrOpts);
+    }
+
+    /**
+     * @param subject name of hooking
+     * @param key target symbol
+     * @param offset offset from target
      * @param ptr target pointer
      * @param originalCode old codes
      * @param ignoreArea pairs of offset, ignores partial bytes.
