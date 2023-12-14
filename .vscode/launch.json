@@ -78,6 +78,18 @@
             "skipFiles": ["<node_internals>/**"],
             "args": ["${workspaceFolder}/bdsx/shellprepare.js"],
             "preLaunchTask": "${defaultBuildTask}"
+        },
+        {
+            "runtimeExecutable": "WinDbgX",
+            "cwd": "${workspaceFolder}/bedrock_server",
+            "type": "legacy-node",
+            "request": "launch",
+            "name": "Launch BDSX in WinDbg",
+            "runtimeArgs": ["-server", "tcp:port=5005,server=localhost", "-g", "${workspaceFolder}/bedrock_server/bedrock_server.exe"],
+            "args": ["${workspaceFolder}"],
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal",
+            "preLaunchTask": "${defaultBuildTask}"
         }
     ]
 }
