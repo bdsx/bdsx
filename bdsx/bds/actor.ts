@@ -284,7 +284,7 @@ export class ActorDamageSource extends NativeClass {
 @nativeClass(0x30)
 export class ActorDamageByBlockSource extends ActorDamageSource {
     /**
-     * Magma, Stalactite, and Stalagmite are confirmed as used in BDS
+     * At least Magma, Stalactite, and Stalagmite are verified that used in BDS
      */
     static create(block: Block, cause: ActorDamageCause): ActorDamageByBlockSource;
     static create(this: never, cause: ActorDamageCause): ActorDamageSource;

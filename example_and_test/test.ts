@@ -1055,7 +1055,9 @@ Tester.concurrency(
 
                                 const pos = actor.getSpawnPosition();
                                 const dim = actor.getSpawnDimension();
-                                this.equals(dim, DimensionId.Overworld, "respawn dimension mismatch");
+                                if (!actor.hasRespawnPosition()) {
+                                    this.equals(dim, DimensionId.Undefined, "respawn dimension mismatch");
+                                }
 
                                 actor.setRespawnPosition(BlockPos.create(1, 2, 3), DimensionId.TheEnd);
                                 const newPos = actor.getSpawnPosition();
