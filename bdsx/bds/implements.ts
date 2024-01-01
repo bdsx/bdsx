@@ -336,7 +336,7 @@ const GameRules$createAllGameRulesPacket = procHacker.js(
 );
 Level.prototype.syncGameRules = function () {
     const wrapper = new unique_ptr$GameRulesChangedPacket(true);
-    GameRules$createAllGameRulesPacket.call(this.getGameRules(), wrapper);
+    GameRules$createAllGameRulesPacket.call(bedrockServer.gameRules, wrapper);
     for (const player of bedrockServer.serverInstance.getPlayers()) {
         player.sendNetworkPacket(wrapper.value);
     }
@@ -3103,7 +3103,7 @@ GameRules.prototype.nameToGameRuleIndex = procHacker.js(
 ); // Will return -1 if not found, so int32 instead of uint32
 
 GameRules.nameToGameRuleIndex = function (name: string): int32_t {
-    return bedrockServer.level.getGameRules().nameToGameRuleIndex(name);
+    return bedrockServer.gameRules.nameToGameRuleIndex(name);
 };
 
 GameRule.abstract({
