@@ -1500,7 +1500,7 @@ ActorDamageByChildActorSource.constructWith = function (
 };
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 0x4a0], // accessed in ItemActor::isFireImmune
+    itemStack: [ItemStack, 0x4c8], // accessed in ItemActor::isFireImmune
 });
 
 const attribNames = getEnumKeys(AttributeId).map(str => AttributeName[str]);
