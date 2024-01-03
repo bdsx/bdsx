@@ -306,18 +306,8 @@ export class MoveActorAbsolutePacket extends Packet {
     actorId: ActorRuntimeID;
     @nativeField(uint8_t)
     flags: uint8_t;
-
-    /** @see https://wiki.vg/Bedrock_Protocol#Data_types PlayerLocation */
-    @nativeField(float32_t)
-    x: float32_t;
-
-    /** @see https://wiki.vg/Bedrock_Protocol#Data_types PlayerLocation */
-    @nativeField(float32_t)
-    y: float32_t;
-
-    /** @see https://wiki.vg/Bedrock_Protocol#Data_types PlayerLocation */
-    @nativeField(float32_t)
-    z: float32_t;
+    @nativeField(Vec3)
+    pos: Vec3;
 
     /** Byte of pitch, to convert to normal pitch value divide it by 0.71
      * @see https://wiki.vg/Bedrock_Protocol#Data_types PlayerLocation */
