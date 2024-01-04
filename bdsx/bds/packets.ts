@@ -309,17 +309,17 @@ export class MoveActorAbsolutePacket extends Packet {
     @nativeField(Vec3)
     pos: Vec3;
 
-    /** Byte of pitch, to convert to normal pitch value divide it by 0.71
+    /** Byte of x-rotation(pitch), to convert to normal pitch value divide it by 0.71
      * @see https://wiki.vg/Bedrock_Protocol#Data_types PlayerLocation */
     @nativeField(uint8_t)
     xRot: uint8_t;
 
-    /** Byte of yaw, to convert to normal yaw value divide it by 0.71
+    /** Byte of y-rotation(yaw), to convert to normal yaw value divide it by 0.71
      * @see https://wiki.vg/Bedrock_Protocol#Data_types PlayerLocation */
     @nativeField(uint8_t)
     yRot: uint8_t;
 
-    /** Byte of respectively yaw, to convert to normal yaw value divide it by 0.71
+    /** Byte of z-rotation(yaw), to convert to normal yaw value divide it by 0.71
      * @see https://wiki.vg/Bedrock_Protocol#Data_types PlayerLocation */
     @nativeField(uint8_t)
     zRot: uint8_t;
