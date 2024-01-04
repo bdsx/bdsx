@@ -319,7 +319,7 @@ export class MoveActorAbsolutePacket extends Packet {
     @nativeField(uint8_t)
     yRot: uint8_t;
 
-    /** Byte of z-rotation(yaw), to convert to normal yaw value divide it by 0.71
+    /** Byte of z-rotation(head yaw), to convert to normal yaw value divide it by 0.71
      * @see https://wiki.vg/Bedrock_Protocol#Data_types PlayerLocation */
     @nativeField(uint8_t)
     zRot: uint8_t;
