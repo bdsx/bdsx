@@ -327,8 +327,14 @@ export class MoveActorAbsolutePacket extends Packet {
 
 export namespace MoveActorAbsolutePacket {
     export enum Flags {
-        teleported = 248,
-        onGround = 259,
+        hasX = 0x1,
+        hasY = 0x2,
+        hasZ = 0x4,
+        hasPitch = 0x8,
+        hasYaw = 0x10,
+        hasHeadYaw = 0x20,
+        onGround = 0x40,
+        teleported = 0x80,
     }
 }
 
