@@ -302,7 +302,40 @@ export class TakeItemActorPacket extends Packet {
 
 @nativeClass(null)
 export class MoveActorAbsolutePacket extends Packet {
-    // unknown
+    @nativeField(ActorRuntimeID)
+    actorId: ActorRuntimeID;
+    @nativeField(uint8_t)
+    flags: uint8_t;
+    @nativeField(Vec3)
+    pos: Vec3;
+
+    /** Byte of x-rotation(pitch), to convert to normal pitch value divide it by 0.71
+     * @see https://wiki.vg/Bedrock_Protocol#Data_types PlayerLocation */
+    @nativeField(uint8_t)
+    xRot: uint8_t;
+
+    /** Byte of y-rotation(yaw), to convert to normal yaw value divide it by 0.71
+     * @see https://wiki.vg/Bedrock_Protocol#Data_types PlayerLocation */
+    @nativeField(uint8_t)
+    yRot: uint8_t;
+
+    /** Byte of z-rotation(head yaw), to convert to normal yaw value divide it by 0.71
+     * @see https://wiki.vg/Bedrock_Protocol#Data_types PlayerLocation */
+    @nativeField(uint8_t)
+    zRot: uint8_t;
+}
+
+export namespace MoveActorAbsolutePacket {
+    export enum Flags {
+        hasX = 0x1,
+        hasY = 0x2,
+        hasZ = 0x4,
+        hasPitch = 0x8,
+        hasYaw = 0x10,
+        hasHeadYaw = 0x20,
+        onGround = 0x40,
+        teleported = 0x80,
+    }
 }
 
 @nativeClass(null)
