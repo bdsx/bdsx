@@ -57,8 +57,7 @@ function onPacketRaw(rbp: OnPacketRBP, conn: NetworkConnection): PacketSharedPtr
     try {
         const target = events.packetRaw(packetId);
         if (target === null || target.isEmpty()) throw Error("no listener but onPacketRaw fired.");
-        const ni = conn.networkIdentifier;
-        nethook.lastSender = ni;
+        const ni = (nethook.lastSender = conn.networkIdentifier);
         const s = rbp.stream;
         const data = s.data;
         const rawpacketptr = data.valueptr;
@@ -83,12 +82,12 @@ function onPacketRaw(rbp: OnPacketRBP, conn: NetworkConnection): PacketSharedPtr
 const packetizeSymbol =
     "?_sortAndPacketizeEvents@NetworkSystem@@AEAA_NAEAVNetworkConnection@@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@Z";
 const packetBeforeSkipAddress = proc[packetizeSymbol].add(0x7eb); // after of packetAfter
-function onPacketBefore(rbp: OnPacketRBP, returnAddressInStack: StaticPointer, packetId: MinecraftPacketIds, conn: NetworkConnection): void {
+function onPacketBefore(rbp: OnPacketRBP, returnAddressInStack: StaticPointer, packetId: MinecraftPacketIds): void {
     try {
         const target = events.packetBefore(packetId);
         if (target === null || target.isEmpty()) throw Error("no listener but onPacketBefore fired.");
 
-        const ni = conn.networkIdentifier;
+        const ni = nethook.lastSender || asmcode.addressof_lastSenderNetId.getPointerAs(NetworkIdentifier);
         const TypedPacket = PacketIdToType[packetId] || Packet;
         const packet = rbp.packet.p!;
         const typedPacket = packet.as(TypedPacket);
@@ -255,18 +254,18 @@ bedrockServer.withLoading().then(() => {
     procHacker.patching(
         "hook-packet-send-all",
         sendToClientsSymbol,
-        0xb0,
+        0x74,
         asmcode.packetSendAllHook, // original code depended
         Register.rax,
         true,
         // prettier-ignore
         [
             0x49, 0x8B, 0x04, 0x24,                     // mov rax,qword ptr ds:[r12]
-            0x49, 0x8D, 0x96, 0x00, 0x02, 0x00, 0x00,   // lea rdx,qword ptr ds:[r14+200]
             0x49, 0x8B, 0xCC,                           // mov rcx,r12
-            0x48, 0x8B, 0x40, 0x18,                     // mov rax,qword ptr ds:[rax+18]
+            0x0F, 0xB6, 0xBB, 0xA0, 0x00, 0x00, 0x00,   // movzx edi,byte ptr ds:[rbx+A0]
+            0x41, 0x0F, 0xB6, 0x74, 0x24, 0x10,         // movzx esi,byte ptr ds:[r12+10]
+            0x48, 0x8b, 0x40, 0x08,                     // mov rax, qword ptr ds:[rax+8]
             0xFF, 0x15, null, null, null, null,         // call qword ptr ds:[<__guard_dispatch_icall_fptr>]
-            // CAUTION: jump target after this
         ],
     );
 

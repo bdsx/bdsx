@@ -508,9 +508,12 @@ endp
 export def onPacketRaw:qword
 export def createPacketRaw:qword
 export def enabledPacket:byte[PACKET_ID_COUNT]
+export def lastSenderNetId:qword
 
 export proc packetRawHook
     ; dword ptr[rbp+0x180] - packetId
+    mov lastSenderNetId, r14 ; NetworkConnection
+
     mov edx, dword ptr[rbp+0x180]
     lea rax, enabledPacket
     mov al, byte ptr[rax+rdx]
@@ -543,7 +546,6 @@ export proc packetBeforeHook
     mov rcx, rbp
     mov rdx, rsp
     ; r8 - packetId
-    mov r9, r14 ; NetworkConnection
     jmp onPacketBefore
 _skipEvent:
     ret
@@ -643,11 +645,12 @@ _pass:
 
     unwind
     ; original codes
-    mov rax, r12 ; [r12]: packet.vftable
-    mov rax, [rax] ; temp solution, assembler can't deal with `mov rax, [r12]`
-    lea rdx, [r14+0x200]
+    ; temp solution, assembler can't deal with `mov rax, [r12]`, or `[r12+0x10]`. anyway rcx == r12
     mov rcx, r12
-    mov rax, [rax+0x18]
+    mov rax, [rcx]
+    movzx edi, byte ptr[rbx+0xa0]
+    movzx esi, byte ptr[rcx+0x10]
+    mov rax, qword ptr[rax+0x8]
     jmp __guard_dispatch_icall_fptr
 endp
 

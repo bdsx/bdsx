@@ -105,6 +105,8 @@ export namespace asmcode {
     export function getEnabledPacket(idx:number):number;
     export function setEnabledPacket(n:number, idx:number):void;
     export const addressof_enabledPacket:NativePointer;
+    export let lastSenderNetId:VoidPointer;
+    export const addressof_lastSenderNetId:NativePointer;
     export const packetRawHook:NativePointer;
     export let packetBeforeOriginal:VoidPointer;
     export const addressof_packetBeforeOriginal:NativePointer;
