@@ -8,6 +8,7 @@ import { NativeClass, NativeClassType } from "./nativeclass";
 import { NativeType, Type } from "./nativetype";
 import { Singleton } from "./singleton";
 import { hex } from "./util";
+import { TypedArrayBuffer, TypedArrayBufferConstructor } from "./common";
 
 export interface CxxVectorType<T> extends NativeClassType<CxxVector<T>> {
     new (address?: VoidPointer | boolean): CxxVector<T>;
@@ -538,6 +539,26 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
             this.set(i, array[i]);
         }
         if (n < size) this.resize(n);
+    }
+
+    getAsTypedArray<T extends TypedArrayBuffer>(type: TypedArrayBufferConstructor<T>): T {
+        const beginptr = this.getPointer(0);
+        const endptr = this.getPointer(8);
+        const sizeBytes = endptr.subptr(beginptr);
+        const n = Math.floor(sizeBytes / type.BYTES_PER_ELEMENT);
+        const out = new type(n);
+        if (beginptr !== null) beginptr.copyTo(out, out.byteLength);
+        return out;
+    }
+
+    setFromTypedArray(buffer: TypedArrayBuffer): void {
+        const compsize = this.componentType[NativeType.size];
+        const bytes = buffer.byteLength;
+        const size = this.size();
+        const n = Math.ceil(bytes / compsize);
+        if (n > size) this.resize(n);
+        const beginptr = this.getPointer(0);
+        beginptr.setBuffer(buffer);
     }
 
     *values(): IterableIterator<T> {

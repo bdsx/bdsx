@@ -650,6 +650,28 @@ Tester.concurrency(
             clsvector.destruct();
         },
 
+        vectorAsTypedArray() {
+            const values = new Array(500);
+            for (let i = 0; i < values.length; i++) {
+                values[i] = i * 30 - 1000;
+            }
+
+            const vec1 = CxxVector.make(int32_t).construct();
+            vec1.setFromArray(values);
+            const typedArray = vec1.getAsTypedArray(Int32Array);
+            this.equals(values.length, typedArray.length);
+            for (let i = 0; i < values.length; i++) {
+                this.equals(values[i], typedArray[i]);
+            }
+
+            const vec2 = CxxVector.make(int32_t).construct();
+            vec2.setFromTypedArray(typedArray);
+            const arrayOut = vec2.toArray();
+            for (let i = 0; i < values.length; i++) {
+                this.equals(values[i], arrayOut[i]);
+            }
+        },
+
         optional() {
             const optionalInt = CxxOptionalToUndefUnion.make(int32_t);
             const optionalJs = asm()
