@@ -77,8 +77,8 @@ function remapType(type: ParamType): makefunc.Paramable {
 
 type InstanceTypeOnly<T> = T extends { prototype: infer V } ? V : never;
 
-type TypeFrom_js2np<T extends ParamType> = InstanceTypeOnly<T> | null | undefined;
-type TypeFrom_np2js<T extends ParamType> = InstanceTypeOnly<T>;
+export type TypeFrom_js2np<T extends ParamType> = InstanceTypeOnly<T> | null | undefined;
+export type TypeFrom_np2js<T extends ParamType> = InstanceTypeOnly<T>;
 
 export type TypesFromParamIds_js2np<T extends ParamType[]> = {
     [key in keyof T]: T[key] extends null ? void : T[key] extends ParamType ? TypeFrom_js2np<T[key]> : T[key];
@@ -740,4 +740,41 @@ X64Assembler.prototype.make = function <OPTS extends MakeFuncOptionsWithName<any
     ...params: PARAMS
 ): FunctionFromTypes_js<StaticPointer, OPTS, PARAMS, RETURN> {
     return makefunc.js(this.alloc(opts && opts.name), returnType, opts, ...params);
+};
+
+abstract class CallablePointerBase<OPTS extends MakeFuncOptions<any> | null, RETURN extends ParamType, PARAMS extends ParamType[]> extends VoidPointer {
+    protected abstract returnType: RETURN;
+    protected abstract params: PARAMS;
+    protected abstract opts?: OPTS;
+    private _invoker?: FunctionFromTypes_js<this, OPTS, PARAMS, RETURN>;
+    get invoker(): FunctionFromTypes_js<this, OPTS, PARAMS, RETURN> {
+        if (this._invoker === undefined) {
+            this._invoker = makefunc.js(this, this.returnType, this.opts, ...this.params);
+        }
+        return this._invoker;
+    }
+}
+
+export interface CallablePointerType<THIS, RETURN, PARAMS extends any[]> extends ParamType {
+    new (): CallablePointer<THIS, RETURN, PARAMS>;
+    prototype: CallablePointer<THIS, RETURN, PARAMS>;
+}
+
+export interface CallablePointer<THIS, RETURN, PARAMS extends any[]> extends VoidPointer {
+    readonly invoker: (this: THIS, ...params: PARAMS) => RETURN;
+}
+
+export const CallablePointer = {
+    make<OPTS extends MakeFuncOptions<any> | null, RETURN extends ParamType, PARAMS extends ParamType[]>(
+        returnType: RETURN,
+        opts?: OPTS,
+        ...params: PARAMS
+    ): CallablePointerType<GetThisFromOpts<OPTS>, TypeFrom_np2js<RETURN>, TypesFromParamIds_js2np<PARAMS>> {
+        class CallablePointerImpl extends CallablePointerBase<OPTS, RETURN, PARAMS> {
+            protected returnType: RETURN = returnType;
+            protected params: PARAMS = params;
+            protected opts?: OPTS = opts;
+        }
+        return CallablePointerImpl as CallablePointerType<GetThisFromOpts<OPTS>, TypeFrom_np2js<RETURN>, TypesFromParamIds_js2np<PARAMS>>;
+    },
 };
