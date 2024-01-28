@@ -301,7 +301,7 @@ export class NativeType<T> extends makefunc.ParamableT<T> implements Type<T> {
         let ctorbase = (type as any).prototype;
         if (!ctorbase || !(NativeType.ctor in ctorbase)) ctorbase = type;
 
-        const name = builder.importType(type);
+        const name = builder.import(type);
         if (ctorbase[NativeType.ctor] !== emptyFunc) {
             builder.ctor.ptrUsed = true;
             builder.ctor.setPtrOffset(offset);

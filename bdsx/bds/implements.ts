@@ -1080,6 +1080,7 @@ Actor.prototype.getOwner = procHacker.js("?getOwner@Actor@@QEBAPEAVMob@@XZ", Mob
 Actor.prototype.setOwner = procHacker.js("?setOwner@Actor@@UEAAXUActorUniqueID@@@Z", void_t, { this: Actor }, ActorUniqueID);
 Actor.prototype.getVariant = procHacker.js("?getVariant@Actor@@QEBAHXZ", int32_t, { this: Actor });
 Actor.prototype.setVariant = procHacker.js("?setVariant@Actor@@QEAAXH@Z", void_t, { this: Actor }, int32_t);
+Actor.prototype.setTarget = procHacker.jsv("??_7Actor@@6B@", "?setTarget@Actor@@UEAAXPEAV1@@Z", void_t, { this: Actor }, Actor);
 
 const getProjectileComponent = procHacker.js("??$tryGetComponent@VProjectileComponent@@@Actor@@QEAAPEAVProjectileComponent@@XZ", ProjectileComponent, null, Actor);
 const getPhysicsComponent = procHacker.js("??$tryGetComponent@VPhysicsComponent@@@Actor@@QEAAPEAVPhysicsComponent@@XZ", PhysicsComponent, null, Actor);
@@ -2778,9 +2779,9 @@ Block.prototype.canHurtAndBreakItem = procHacker.js("?canHurtAndBreakItem@Block@
 Block.prototype.getThickness = procHacker.js("?getThickness@Block@@QEBAMXZ", float32_t, { this: Block });
 Block.prototype.hasComparatorSignal = procHacker.js("?hasComparatorSignal@Block@@QEBA_NXZ", bool_t, { this: Block });
 Block.prototype.getTranslucency = procHacker.js("?getTranslucency@Block@@QEBAMXZ", float32_t, { this: Block });
-const Block$getExplosionResistance = procHacker.js("?getExplosionResistance@Block@@QEBAMXZ", float32_t, { this: Block }, Actor);
+const Block$getExplosionResistance = procHacker.js("?getExplosionResistance@Block@@QEBAMXZ", float32_t, null, Block);
 Block.prototype.getExplosionResistance = function (actor: Actor | null = null): number {
-    return Block$getExplosionResistance.call(this, actor);
+    return Block$getExplosionResistance(this);
 };
 Block.prototype.getComparatorSignal = procHacker.js(
     "?getComparatorSignal@Block@@QEBAHAEAVBlockSource@@AEBVBlockPos@@E@Z",
