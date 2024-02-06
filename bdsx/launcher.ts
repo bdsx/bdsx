@@ -489,7 +489,7 @@ function _launch(asyncResolve: () => void): void {
         [Register.rcx, Register.rdx],
         [],
     );
-    procHacker.hooking(
+    const sendEvent = procHacker.hooking(
         "?sendEvent@ServerInstanceEventCoordinator@@QEAAXAEBV?$EventRef@U?$ServerInstanceGameplayEvent@X@@@@@Z",
         void_t,
         { name: "hook of shutdown" },
@@ -500,6 +500,7 @@ function _launch(asyncResolve: () => void): void {
             events.serverStop.fire();
             _tickCallback();
         }
+        sendEvent(_this, ev);
     });
 
     // graceful kill for Network port occupied
