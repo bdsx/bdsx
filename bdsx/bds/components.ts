@@ -17,7 +17,7 @@ export class PhysicsComponent extends AbstractClass {
     setHasCollision(actor: Actor, bool: boolean): void {
         abstract();
     }
-    setAffectedByGravity(actorData: SyncedActorDataComponent, bool: boolean): void {
+    setAffectedByGravity(actorData: ActorDataFlagComponent, actorDirtyData: ActorDataDirtyFlagsComponent, bool: boolean): void {
         abstract();
     }
 }

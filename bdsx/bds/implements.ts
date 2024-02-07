@@ -82,6 +82,7 @@ import { CommandName } from "./commandname";
 import { CommandOrigin, ServerCommandOrigin, VirtualCommandOrigin } from "./commandorigin";
 import "./commandparsertypes";
 import {
+    ActorDataDirtyFlagsComponent,
     ActorDataFlagComponent,
     CommandBlockComponent,
     ConditionalBandwidthOptimizationComponent,
@@ -1151,6 +1152,7 @@ PhysicsComponent.prototype.setAffectedByGravity = procHacker.js(
     void_t,
     { this: PhysicsComponent },
     ActorDataFlagComponent,
+    ActorDataDirtyFlagsComponent,
     bool_t,
 );
 
@@ -1762,9 +1764,8 @@ const shHandler = ServerNetworkHandlerNonOwnerPointer.construct();
 SimulatedPlayer.create = function (name: string, blockPos: VectorXYZ, dimensionId: DimensionId) {
     if (!(blockPos instanceof BlockPos)) blockPos = BlockPos.create(blockPos);
     shHandler.assign(bedrockServer.nonOwnerPointerServerNetworkHandler);
-    const unknown = "12345678";
-    const player = SimulatedPlayer$create(name, blockPos as BlockPos, dimensionId, shHandler, unknown); // it destructs snHandler
-    return player;
+    const unknown = "";
+    return SimulatedPlayer$create(name, blockPos as BlockPos, dimensionId, shHandler, unknown); // it destructs snHandler
 };
 SimulatedPlayer.prototype.simulateDisconnect = procHacker.js("?simulateDisconnect@SimulatedPlayer@@QEAAXXZ", void_t, { this: SimulatedPlayer });
 SimulatedPlayer.prototype.simulateAttack = procHacker.js("?simulateAttack@SimulatedPlayer@@QEAA_NPEAVActor@@@Z", bool_t, { this: SimulatedPlayer }, Actor);
