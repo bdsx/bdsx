@@ -365,33 +365,32 @@ export class DoubleTag extends Tag {
 
 @nativeClass()
 export class ByteArrayTag extends Tag {
-    @nativeField(TagMemoryChunk)
-    data: TagMemoryChunk;
+    @nativeField(CxxVector.make(uint8_t))
+    data: CxxVector<uint8_t>;
 
     value(): Uint8Array {
-        return this.data.getAs(Uint8Array);
+        return this.data.toTypedArray(Uint8Array);
     }
     constructWith(data: Uint8Array): void {
         abstract();
     }
     set(array: TypedArrayBuffer | number[]): void {
         if (array instanceof Array) array = new Uint8Array(array);
-        this.data.set(array);
+        this.data.setFromTypedArray(array);
     }
     get(idx: number): uint8_t {
         const data = this.data;
-        if (idx < 0 || idx >= data.size) return undefined as any;
-        const buffer = data.buffer!; // it must be not null
-        return buffer.getUint8(idx);
+        if (idx < 0 || idx >= data.size()) return undefined as any;
+        return data.get(idx);
     }
     size(): number {
-        return this.data.size;
+        return this.data.size();
     }
     toUint8Array(): Uint8Array {
-        return this.data.getAs(Uint8Array);
+        return this.data.toTypedArray(Uint8Array);
     }
     writeTo(writer: NBTWriter): void {
-        writer.byteArray(this.toUint8Array());
+        writer.byteArray(this.data.toTypedArray(Uint8Array));
     }
 
     static constructWith(data: Uint8Array): ByteArrayTag {
@@ -406,7 +405,7 @@ export class ByteArrayTag extends Tag {
     }
 
     [util.inspect.custom](depth: number, options: Record<string, any>): unknown {
-        return `ByteArrayTag ${util.inspect(this.data.getAs(Uint8Array), options)}`;
+        return `ByteArrayTag ${util.inspect(this.data.toTypedArray(Uint8Array), options)}`;
     }
 }
 
@@ -621,40 +620,39 @@ export class CompoundTag extends Tag {
 
 @nativeClass()
 export class IntArrayTag extends Tag {
-    @nativeField(TagMemoryChunk)
-    data: TagMemoryChunk;
+    @nativeField(CxxVector.make(int32_t))
+    data: CxxVector<int32_t>;
 
     [NativeType.ctor](): void {
         this.vftable = IntArrayTag.vftable;
     }
 
     value(): Int32Array {
-        return this.data.getAs(Int32Array);
+        return this.data.toTypedArray(Int32Array);
     }
 
     constructWith(data: Int32Array): void {
         this.construct();
-        this.data.set(data);
+        this.data.setFromTypedArray(data);
     }
 
     set(array: Int32Array | number[]): void {
         if (!(array instanceof Int32Array)) array = new Int32Array(array);
-        this.data.set(array);
+        this.data.setFromTypedArray(array);
     }
 
     get(idx: number): int32_t {
         const data = this.data;
-        if (idx < 0 || idx >= data.elements) return undefined as any;
-        const buffer = data.buffer!; // it must be not null
-        return buffer.getInt32(idx * 4);
+        if (idx < 0 || idx >= data.size()) return undefined as any;
+        return this.data.get(idx);
     }
 
     size(): number {
-        return this.data.elements;
+        return this.data.size();
     }
 
     toInt32Array(): Int32Array {
-        return this.data.getAs(Int32Array);
+        return this.data.toTypedArray(Int32Array);
     }
 
     writeTo(writer: NBTWriter): void {
@@ -668,7 +666,7 @@ export class IntArrayTag extends Tag {
     }
 
     [util.inspect.custom](depth: number, options: Record<string, any>): unknown {
-        return `IntArrayTag ${util.inspect(this.data.getAs(Int32Array), options)}`;
+        return `IntArrayTag ${util.inspect(this.data.toTypedArray(Int32Array), options)}`;
     }
 
     static readonly vftable = proc["??_7IntArrayTag@@6B@"];

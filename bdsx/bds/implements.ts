@@ -3443,7 +3443,7 @@ ByteArrayTag.prototype[NativeType.ctor] = function () {
 ByteArrayTag.prototype.constructWith = function (data: Uint8Array): void {
     this.vftable = ByteArrayTag$vftable;
     this.data.construct();
-    this.data.set(data);
+    this.data.setFromTypedArray(data);
 };
 const StringTagDataOffset = StringTag.offsetOf("data");
 StringTag.prototype[NativeType.ctor] = function () {
