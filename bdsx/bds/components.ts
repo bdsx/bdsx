@@ -22,8 +22,17 @@ export class PhysicsComponent extends AbstractClass {
     }
 }
 
-@nativeClass(null)
+/**
+ * @deprecated removed
+ */
 export class SyncedActorDataComponent extends AbstractClass {}
+
+@nativeClass(null)
+export class ActorDataFlagComponent extends AbstractClass {}
+
+@nativeClass(null)
+export class ActorDataDirtyFlagsComponent extends AbstractClass {}
+
 /**
  * allows the entity to be a thrown entity.
  */

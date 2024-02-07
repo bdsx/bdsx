@@ -47,7 +47,7 @@ class OnPacketRBP extends AbstractClass {
     // NetworkSystem::_sortAndPacketizeEvents before MinecraftPackets::createPacket
     @nativeField(CxxSharedPtr.make(Packet), 0x190)
     packet: CxxSharedPtr<Packet>; // NetworkSystem::_sortAndPacketizeEvents before MinecraftPackets::createPacket
-    @nativeField(ReadOnlyBinaryStream, 0x230)
+    @nativeField(ReadOnlyBinaryStream, 0x1e0)
     stream: ReadOnlyBinaryStream; // after NetworkConnection::receivePacket
 }
 
@@ -81,7 +81,7 @@ function onPacketRaw(rbp: OnPacketRBP, conn: NetworkConnection): PacketSharedPtr
 }
 const packetizeSymbol =
     "?_sortAndPacketizeEvents@NetworkSystem@@AEAA_NAEAVNetworkConnection@@V?$time_point@Usteady_clock@chrono@std@@V?$duration@_JU?$ratio@$00$0DLJKMKAA@@std@@@23@@chrono@std@@@Z";
-const packetBeforeSkipAddress = proc[packetizeSymbol].add(0x7eb); // after of packetAfter
+const packetBeforeSkipAddress = proc[packetizeSymbol].add(0x7e4); // after of packetAfter
 function onPacketBefore(rbp: OnPacketRBP, returnAddressInStack: StaticPointer, packetId: MinecraftPacketIds): void {
     try {
         const target = events.packetBefore(packetId);
@@ -182,8 +182,8 @@ function onPacketSendInternal(handler: NetworkSystem, ni: NetworkIdentifier, pac
 
 bedrockServer.withLoading().then(() => {
     const packetHandleSymbol = "?handle@Packet@@QEAAXAEBVNetworkIdentifier@@AEAVNetEventCallback@@AEAV?$shared_ptr@VPacket@@@std@@@Z";
-    const sendToClientsSymbol =
-        "?sendToClients@LoopbackPacketSender@@UEAAXAEBV?$vector@UNetworkIdentifierWithSubId@@V?$allocator@UNetworkIdentifierWithSubId@@@std@@@std@@AEBVPacket@@@Z";
+    const sendToMultipleSymbol =
+        "?sendToMultiple@NetworkSystem@@QEAAXAEBV?$vector@UNetworkIdentifierWithSubId@@V?$allocator@UNetworkIdentifierWithSubId@@@std@@@std@@AEBVPacket@@@Z";
 
     // hook raw
     asmcode.onPacketRaw = makefunc.np(onPacketRaw, PacketSharedPtr, null, OnPacketRBP, NetworkConnection);
@@ -206,7 +206,7 @@ bedrockServer.withLoading().then(() => {
     // hook before
     asmcode.onPacketBefore = makefunc.np(onPacketBefore, void_t, { name: "onPacketBefore" }, OnPacketRBP, StaticPointer, int32_t, NetworkConnection);
 
-    asmcode.packetBeforeOriginal = proc["<lambda_e258b204e306bd72c6db47d9931970b2>::operator()"];
+    asmcode.packetBeforeOriginal = proc["<lambda_93c29621d786618f23f659b70f04c712>::operator()"];
     procHacker.patching(
         "hook-packet-before",
         packetizeSymbol,
@@ -216,9 +216,9 @@ bedrockServer.withLoading().then(() => {
         true,
         // prettier-ignore
         [
-            0x48, 0x8D, 0x95, 0xE0, 0x01, 0x00, 0x00,  // lea rdx,qword ptr ss:[rbp+1E0]
+            0x48, 0x8D, 0x95, 0x90, 0x02, 0x00, 0x00,  // lea rdx,qword ptr ss:[rbp+290]
             0x48, 0x8D, 0x4D, 0x10,                    // lea rcx,qword ptr ss:[rbp+10]
-            0xE8, null, null, null, null,              // call <bedrock_server.<lambda_e258b204e306bd72c6db47d9931970b2>::operator()>
+            0xE8, null, null, null, null,              // call <bedrock_server.<lambda_93c29621d786618f23f659b70f04c712>::operator()>
             0x90,                                      // nop
         ],
     );
@@ -231,7 +231,7 @@ bedrockServer.withLoading().then(() => {
     procHacker.patching(
         "hook-packet-after",
         packetizeSymbol,
-        0x794,
+        0x78d,
         asmcode.packetAfterHook, // original code depended
         Register.rdx,
         true,
@@ -248,13 +248,13 @@ bedrockServer.withLoading().then(() => {
     asmcode.onPacketSend = makefunc.np(onPacketSend, int32_t, null, int32_t, NetworkIdentifier, Packet);
     asmcode.sendOriginal = procHacker.hookingRaw("?send@NetworkSystem@@QEAAXAEBVNetworkIdentifier@@AEBVPacket@@W4SubClientId@@@Z", asmcode.packetSendHook);
 
-    asmcode.packetSendAllCancelPoint = proc[sendToClientsSymbol].add(0xde); // jump to after NetworkSystem::_sendInternal
+    asmcode.packetSendAllCancelPoint = proc[sendToMultipleSymbol].add(0xc3); // jump to after NetworkSystem::_sendInternal
 
     // hook send all
     procHacker.patching(
         "hook-packet-send-all",
-        sendToClientsSymbol,
-        0x74,
+        sendToMultipleSymbol,
+        0x5a,
         asmcode.packetSendAllHook, // original code depended
         Register.rax,
         true,

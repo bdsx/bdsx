@@ -154,8 +154,8 @@ export enum MinecraftPacketIds { // int32_t
     LevelEventGeneric = 0x7c,
     LecternUpdate = 0x7d,
     // VideoStreamConnect_DEPRECATED = 0x7e,
-    AddEntity = 0x7f, // DEPRECATED
-    RemoveEntity = 0x80,
+    // AddEntity = 0x7f, removed
+    // RemoveEntity = 0x80, removed
     ClientCacheStatus = 0x81,
     OnScreenTextureAnimation = 0x82,
     MapCreateLockedCopy = 0x83,

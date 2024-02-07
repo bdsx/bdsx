@@ -1,6 +1,6 @@
 import { abstract } from "../common";
 import { NativeClass, nativeClass, nativeField } from "../nativeclass";
-import { int64_as_float_t } from "../nativetype";
+import { bool_t, int64_as_float_t } from "../nativetype";
 import { Actor } from "./actor";
 import { Block, BlockSource } from "./block";
 import { Vec3 } from "./blockpos";
@@ -24,7 +24,7 @@ export class ItemComponent extends NativeClass {
     buildNetworkTag(u?: cereal.ReflectionCtx): CompoundTag {
         abstract();
     }
-    initializeFromNetwork(tag: CompoundTag, u?: cereal.ReflectionCtx): void {
+    initializeFromNetwork(tag: CompoundTag, u?: cereal.ReflectionCtx): bool_t {
         abstract();
     }
     isCooldown(): this is CooldownItemComponent {

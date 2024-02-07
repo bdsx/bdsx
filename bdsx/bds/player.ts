@@ -1,6 +1,6 @@
 import { abstract, BuildPlatform, Direction, VectorXYZ } from "../common";
 import { mce } from "../mce";
-import { float32_t } from "../nativetype";
+import { bool_t, float32_t } from "../nativetype";
 import { HasStorage, Storage } from "../storage";
 import type { LayeredAbilities } from "./abilities";
 import { Actor, ActorDamageSource, DimensionId, EntityContext, Mob } from "./actor";
@@ -1061,7 +1061,7 @@ export class SimulatedPlayer extends ServerPlayer {
     simulateLocalMove(pos: Vec3, speed: number): void {
         abstract();
     }
-    simulateMoveToLocation(pos: Vec3, speed: number): void {
+    simulateMoveToLocation(pos: Vec3, speed: number, faceTarget: bool_t): void {
         abstract();
     }
     /* move to target with navigation

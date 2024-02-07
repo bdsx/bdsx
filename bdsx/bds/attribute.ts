@@ -7,21 +7,21 @@ import { float32_t, uint32_t } from "../nativetype";
 export enum AttributeId {
     /** @deprecated deleted */
     ZombieSpawnReinforcementsChange = -1,
-    PlayerHunger = 1,
-    PlayerSaturation = 2,
-    PlayerExhaustion = 3,
-    PlayerLevel = 4,
-    PlayerExperience = 5,
-    Health = 6,
-    FollowRange = 7,
-    KnockbackResistance = 8,
-    MovementSpeed = 9,
-    UnderwaterMovementSpeed = 10,
-    LavaMovementSpeed = 11,
-    AttackDamage = 12,
-    Absorption = 13,
-    Luck = 14,
-    JumpStrength = 15, // for horse?
+    PlayerHunger = 2,
+    PlayerSaturation = 3,
+    PlayerExhaustion = 4,
+    PlayerLevel = 5,
+    PlayerExperience = 6,
+    Health = 7,
+    FollowRange = 8,
+    KnockbackResistance = 9,
+    MovementSpeed = 10,
+    UnderwaterMovementSpeed = 11,
+    LavaMovementSpeed = 12,
+    AttackDamage = 13,
+    Absorption = 14,
+    Luck = 15,
+    JumpStrength = 16, // for horse?
 }
 
 export class AttributeInstance extends AbstractClass {

@@ -525,7 +525,7 @@ export class WeakEntityRef extends AbstractClass {
 // @nativeClass(0x8)
 // class WrappedEntityId extends NativeClass {}
 
-@nativeClass(null)
+@nativeClass(0x20)
 export class EntityContext extends AbstractClass {
     @nativeField(VoidPointer.ref())
     enttRegistry: VoidPointer; // accessed on ServerNetworkHandler::_displayGameMessage

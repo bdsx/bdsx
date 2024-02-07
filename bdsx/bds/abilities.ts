@@ -1,4 +1,5 @@
 import { abstract } from "../common";
+import { CxxPair } from "../cxxpair";
 import { makefunc } from "../makefunc";
 import { AbstractClass, nativeClass, NativeClass, nativeField, NativeStruct } from "../nativeclass";
 import { bool_t, float32_t } from "../nativetype";
@@ -112,6 +113,9 @@ export class LayeredAbilities extends AbstractClass {
         abstract();
     }
     getFloat(abilityIndex: AbilitiesIndex): number {
+        return this._getFloatWithLayer(abilityIndex).first;
+    }
+    protected _getFloatWithLayer(index: AbilitiesIndex): CxxPair<float32_t, AbilitiesLayer> {
         abstract();
     }
     getBool(abilityIndex: AbilitiesIndex): boolean {
