@@ -1927,12 +1927,7 @@ ItemStackRequestPacket.prototype.getRequestBatch = procHacker.js(
     ItemStackRequestBatch,
     { this: ItemStackRequestPacket },
 );
-/* ItemStackRequestActionTransferBase.prototype.getSrc = procHacker.js(
-    "?getSrc@ItemStackRequestActionTransferBase@@QEBAAEBUItemStackRequestSlotInfo@@XZ",
-    ItemStackRequestSlotInfo,
-    { this: ItemStackRequestActionTransferBase },
-);
- */
+
 // networkidentifier.ts
 NetworkIdentifier.prototype.getActor = function (): ServerPlayer | null {
     return bedrockServer.serverNetworkHandler._getServerPlayer(this, 0);
