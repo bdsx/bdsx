@@ -1,7 +1,7 @@
 import * as util from "util";
 import { capi } from "./capi";
 import { CircularDetector } from "./circulardetector";
-import { abstract, Bufferable, emptyFunc, Encoding, TypeFromEncoding } from "./common";
+import { abstract, Bufferable, emptyFunc, Encoding, TypedArrayBuffer, TypedArrayBufferConstructor, TypeFromEncoding } from "./common";
 import { NativePointer, PrivatePointer, StaticPointer, StructurePointer, VoidPointer } from "./core";
 import { makefunc } from "./makefunc";
 import { mangle } from "./mangle";
@@ -826,6 +826,15 @@ export abstract class NativeArray<T> extends PrivatePointer implements Iterable<
         for (let i = 0; i < n; i++) {
             out[i] = this.get(i);
         }
+        return out;
+    }
+
+    toTypedArray<T extends TypedArrayBuffer>(type: TypedArrayBufferConstructor<T>): T {
+        const elementSize = this.componentType[NativeType.size];
+        const sizeBytes = elementSize * this.length;
+        const n = Math.floor(sizeBytes / type.BYTES_PER_ELEMENT);
+        const out = new type(n);
+        this.copyTo(out, out.byteLength);
         return out;
     }
 

@@ -2,7 +2,7 @@ import { abstract } from "../common";
 import type { VoidPointer } from "../core";
 import { CxxVector, CxxVectorLike } from "../cxxvector";
 import { NativeClass } from "../nativeclass";
-import type { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityRefTraits, ItemActor, WeakEntityRef } from "./actor";
+import type { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, ItemActor, WeakEntityRef } from "./actor";
 import { BlockLegacy, BlockSource } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
 import type { Dimension } from "./dimension";
@@ -40,13 +40,13 @@ export class Level extends NativeClass {
     getPlayers(): ServerPlayer[] {
         abstract();
     }
-    getUsers(): CxxVector<EntityRefTraits> {
+    getUsers(): CxxVector<EntityContext> {
         abstract();
     }
     getActiveUsers(): CxxVector<WeakEntityRef> {
         abstract();
     }
-    protected _getEntities(): CxxVector<EntityRefTraits> {
+    protected _getEntities(): CxxVector<EntityContext> {
         abstract();
     }
     getEntities(): Actor[] {

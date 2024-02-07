@@ -1,4 +1,5 @@
 import * as util from "util";
+import { TypedArrayBuffer, TypedArrayBufferConstructor, abstract } from "./common";
 import { NativePointer, VoidPointer } from "./core";
 import { dll } from "./dll";
 import { makefunc } from "./makefunc";
@@ -26,6 +27,10 @@ function getSize(bytes: number, compsize: number): number {
     }
     return (bytes / compsize) | 0;
 }
+
+// primitive only
+// internal util type for only cxxvector
+type WITH_PRIM_ONLY<T> = T extends number ? CxxVector<T> : never;
 
 /**
  * CxxVector-like with a JS array
@@ -540,6 +545,20 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
         if (n < size) this.resize(n);
     }
 
+    /**
+     * it works only with primitive types
+     */
+    toTypedArray<A extends TypedArrayBuffer>(this: WITH_PRIM_ONLY<T>, type: TypedArrayBufferConstructor<A>): A {
+        abstract();
+    }
+
+    /**
+     * it works only with primitive types
+     */
+    setFromTypedArray(this: WITH_PRIM_ONLY<T>, buffer: TypedArrayBuffer): void {
+        abstract();
+    }
+
     *values(): IterableIterator<T> {
         const n = this.size();
         for (let i = 0; i !== n; i = (i + 1) | 0) {
@@ -651,6 +670,26 @@ export abstract class CxxVector<T> extends NativeClass implements Iterable<T> {
                         const type = this.componentType;
                         type[NativeType.ctor](ptr);
                         type[NativeType.setter](ptr, from);
+                    }
+
+                    toTypedArray<T extends TypedArrayBuffer>(type: TypedArrayBufferConstructor<T>): T {
+                        const beginptr = this.getPointer(0);
+                        const endptr = this.getPointer(8);
+                        const bytes = endptr.subptr(beginptr);
+                        const n = Math.floor(bytes / type.BYTES_PER_ELEMENT);
+                        const out = new type(n);
+                        if (beginptr !== null) beginptr.copyTo(out, out.byteLength);
+                        return out;
+                    }
+
+                    setFromTypedArray(buffer: TypedArrayBuffer): void {
+                        const compsize = this.componentType[NativeType.size];
+                        const bytes = buffer.byteLength;
+                        const size = this.size();
+                        const n = Math.ceil(bytes / compsize);
+                        if (n > size) this.resize(n);
+                        const beginptr = this.getPointer(0);
+                        beginptr.setBuffer(buffer);
                     }
                 }
                 Object.defineProperty(VectorImpl, "name", {

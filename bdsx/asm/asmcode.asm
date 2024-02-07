@@ -534,7 +534,7 @@ export def onPacketBefore:qword
 export proc packetBeforeHook
     ; dword ptr[rbp+0x180] - packetId
     stack 28h
-    lea rdx,qword ptr[rbp+0x1E0] ; original code
+    lea rdx,qword ptr[rbp+0x290] ; original code
     lea rcx,qword ptr[rbp+0x10] ; original code
     call packetBeforeOriginal ; original code
     unwind

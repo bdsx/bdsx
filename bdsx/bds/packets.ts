@@ -1670,6 +1670,7 @@ export class LecternUpdatePacket extends Packet {
     dropBook: bool_t;
 }
 
+/** @deprecated removed */
 @nativeClass(null)
 export class RemoveEntityPacket extends Packet {
     // unknown
@@ -1961,7 +1962,7 @@ ItemStackRequestAction.setResolver(ptr => {
 @nativeClass(null)
 export class ItemStackRequestActionTransferBase extends ItemStackRequestAction {
     getSrc(): ItemStackRequestSlotInfo {
-        abstract();
+        return this.addAs(ItemStackRequestSlotInfo, 0x18);
     }
 }
 
@@ -2208,6 +2209,7 @@ export class VideoStreamConnect_DEPRECATED extends Packet {
     // unknown
 }
 
+/** @deprecated removed */
 export class AddEntityPacket extends Packet {
     // unknown
 }
@@ -2533,8 +2535,6 @@ export const PacketIdToType = {
     0x7c: LevelEventGenericPacket,
     0x7d: LecternUpdatePacket,
     // 0x7e: VideoStreamConnect_DEPRECATED,
-    0x7f: AddEntity, // DEPRECATED
-    0x80: RemoveEntityPacket,
     0x81: ClientCacheStatusPacket,
     0x82: OnScreenTextureAnimationPacket,
     0x83: MapCreateLockedCopy,
