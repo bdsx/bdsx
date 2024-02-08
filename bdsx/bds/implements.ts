@@ -386,8 +386,8 @@ Level.prototype.getActiveUsers = procHacker.js(
 );
 Level.prototype.getEntities = function () {
     const out: Actor[] = [];
-    for (const refTraits of (this as any)._getEntities()) {
-        const entity = Actor.tryGetFromEntity(refTraits.context._getStackRef());
+    for (const context of (this as any)._getEntities()) {
+        const entity = Actor.tryGetFromEntity(context);
         if (entity === null) continue;
         out.push(entity);
     }
