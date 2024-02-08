@@ -348,7 +348,7 @@ events.chestOpen.setInstaller(() => {
     )(onChestOpen);
 });
 
-events.blockDestroy.setInstaller(() => {
+events.chestPair.setInstaller(() => {
     function onChestPair(chest: ChestBlockActor, chest2: ChestBlockActor, lead: bool_t): void {
         const event = new ChestPairEvent(chest, chest2, lead);
         const canceled = events.chestPair.fire(event) === CANCEL;

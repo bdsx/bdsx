@@ -549,17 +549,15 @@ events.playerLeft.setInstaller(() => {
     )(onPlayerLeft);
 });
 
-events.playerLeft.setInstaller(() => {
-    const _onSimulatedDisconnect = procHacker.hooking(
-        "?simulateDisconnect@SimulatedPlayer@@QEAAXXZ",
-        void_t,
-        null,
-        SimulatedPlayer,
-    )(simulatedPlayer => {
-        const event = new PlayerLeftEvent(simulatedPlayer, false /** disconnecting SimulatedPlayer doesn't send any message.*/);
-        events.playerLeft.fire(event);
-        _onSimulatedDisconnect(simulatedPlayer);
-    });
+const _onSimulatedDisconnect = procHacker.hooking(
+    "?simulateDisconnect@SimulatedPlayer@@QEAAXXZ",
+    void_t,
+    null,
+    SimulatedPlayer,
+)(simulatedPlayer => {
+    const event = new PlayerLeftEvent(simulatedPlayer, false /** disconnecting SimulatedPlayer doesn't send any message.*/);
+    events.playerLeft.fire(event);
+    _onSimulatedDisconnect(simulatedPlayer);
 });
 
 events.splashPotionHit.setInstaller(() => {
