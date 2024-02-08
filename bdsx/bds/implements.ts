@@ -1501,7 +1501,7 @@ ActorDamageByChildActorSource.constructWith = function (
 };
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 0x4c8], // accessed in ItemActor::isFireImmune
+    itemStack: [ItemStack, 0x4d0], // accessed in ItemActor::isFireImmune
 });
 
 const attribNames = getEnumKeys(AttributeId).map(str => AttributeName[str]);
@@ -1551,9 +1551,9 @@ procHacker.hookingRawWithCallOriginal("??1Actor@@UEAA@XZ", asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
-    enderChestContainer: [EnderChestContainer.ref(), 0xcd8], // accessed in Player::Player+1222 (the line between two if-else statements, the first if statement calls EnderChestContainer::EnderChestContainer)
-    playerUIContainer: [PlayerUIContainer, 0xda0], // accessed in Player::readAdditionalSaveData+1256 when calling PlayerUIContainer::load
-    deviceId: [CxxString, 0x1d78], // accessed in AddPlayerPacket::AddPlayerPacket(const Player &)+193 (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
+    enderChestContainer: [EnderChestContainer.ref(), 0xcf0], // accessed in Player::Player+1222 (the line between two if-else statements, the first if statement calls EnderChestContainer::EnderChestContainer)
+    playerUIContainer: [PlayerUIContainer, 0xda8], // accessed in Player::readAdditionalSaveData+1256 when calling PlayerUIContainer::load
+    deviceId: [CxxString, 0x1d90], // accessed in AddPlayerPacket::AddPlayerPacket(const Player &)+193 (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js(
     "?setName@Player@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
