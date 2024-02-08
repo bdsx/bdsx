@@ -41,7 +41,7 @@ import { capi } from "bdsx/capi";
 import { command, CommandFieldOptions } from "bdsx/command";
 import { CommandParameterType } from "bdsx/commandparam";
 import { CommandResultType } from "bdsx/commandresult";
-import { AttributeName, CANCEL } from "bdsx/common";
+import { AttributeName, CANCEL, emptyFunc } from "bdsx/common";
 import { NativePointer } from "bdsx/core";
 import { CxxMap } from "bdsx/cxxmap";
 import { CxxVector, CxxVectorToArray } from "bdsx/cxxvector";
@@ -49,6 +49,7 @@ import { disasm } from "bdsx/disassembler";
 import { dll } from "bdsx/dll";
 import { dllraw } from "bdsx/dllraw";
 import { events } from "bdsx/event";
+import { Event } from "bdsx/eventtarget";
 import { HashSet } from "bdsx/hashset";
 import { bedrockServer } from "bdsx/launcher";
 import { makefunc } from "bdsx/makefunc";
@@ -1042,6 +1043,15 @@ Tester.concurrency(
                     // p.commands.setFromArray(commandArray); // TODO: implement AvailableCommandsCommandData fully
                 }, 1),
             );
+        },
+
+        events() {
+            for (const evname in events) {
+                const event = events[evname as keyof typeof events];
+                if (event instanceof Event) {
+                    event.on(emptyFunc); // run the installer to check symbols
+                }
+            }
         },
 
         actor() {
