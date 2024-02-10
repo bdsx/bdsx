@@ -907,6 +907,10 @@ export class X64Assembler {
                 if (targetRegister === Register.rsp) {
                     this.put(0x24);
                 }
+                // by mdisprgm, temporarily
+                if (targetRegister === Register.r12) {
+                    this.put(0x24);
+                }
             }
         }
 

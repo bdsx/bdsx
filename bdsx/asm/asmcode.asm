@@ -621,8 +621,7 @@ export proc packetSendAllHook
     ; r12 - packet
     ; rbx - ni
 
-    mov rax, r12 ; [r12]: packet.vftable
-    mov rax, [rax] ; temp solution, assembler can't deal with `mov rax, [r12]`
+    mov rax, [r12]
     call [rax+8] ; packet.getId(), just constant return
 
     lea r10, enabledPacket
@@ -645,9 +644,8 @@ _pass:
 
     unwind
     ; original codes
-    ; temp solution, assembler can't deal with `mov rax, [r12]`, or `[r12+0x10]`. anyway rcx == r12
+    mov rax, [r12]
     mov rcx, r12
-    mov rax, [rcx]
     movzx edi, byte ptr[rbx+0xa0]
     movzx esi, byte ptr[rcx+0x10]
     mov rax, qword ptr[rax+0x8]
