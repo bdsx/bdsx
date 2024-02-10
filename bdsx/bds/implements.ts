@@ -363,9 +363,8 @@ Level.prototype.setTime = function (time: number): void {
 Level.prototype.getPlayers = function () {
     const out: ServerPlayer[] = [];
     for (const user of this.getUsers()) {
-        const entity = Actor.tryGetFromEntity(user);
-        if (!(entity instanceof ServerPlayer)) continue;
-        out.push(entity);
+        const entity = ServerPlayer.tryGetFromEntity(user);
+        if (entity) out.push(entity);
     }
     return out;
 };
