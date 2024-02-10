@@ -35,7 +35,6 @@ import {
 import { CxxStringWrapper, Wrapper } from "../pointer";
 import { procHacker } from "../prochacker";
 import { CxxSharedPtr } from "../sharedpointer";
-import { getEnumKeys } from "../util";
 import { Abilities, AbilitiesIndex, AbilitiesLayer, Ability, LayeredAbilities } from "./abilities";
 import {
     Actor,
@@ -1503,15 +1502,14 @@ ItemActor.abstract({
     itemStack: [ItemStack, 0x4d0], // accessed in ItemActor::isFireImmune
 });
 
-const attribNames = getEnumKeys(AttributeId).map(str => AttributeName[str]);
-
 ServerPlayer.prototype.setAttribute = function (id: AttributeId, value: number): AttributeInstance | null {
     const attr = Actor.prototype.setAttribute.call(this, id, value);
     if (attr === null) return null;
     const packet = UpdateAttributesPacket.allocate();
     packet.actorId = this.getRuntimeID();
     const data = AttributeData.construct();
-    data.name.set(attribNames[id]);
+    const attrKey = AttributeId[id] as keyof typeof AttributeId;
+    data.name.set(AttributeName[attrKey]);
     data.current = value;
     data.min = attr.minValue;
     data.max = attr.maxValue;
