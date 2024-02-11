@@ -2,7 +2,7 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import type { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, int8_t, uint16_t, uint8_t } from "../nativetype";
+import { bool_t, CxxString, CxxStringWith8Bytes, uint32_t, int32_t, int8_t, uint16_t, uint8_t } from "../nativetype";
 import type { Actor, DimensionId, ItemActor } from "./actor";
 import type { ChunkPos } from "./blockpos";
 import { BlockPos } from "./blockpos";
@@ -147,7 +147,7 @@ export class Block extends NativeClass {
     getDescriptionId(): CxxString {
         abstract();
     }
-    getRuntimeId(): int32_t {
+    getRuntimeId(): uint32_t {
         abstract();
     }
     getBlockEntityType(): BlockActorType {
