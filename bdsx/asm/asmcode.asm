@@ -546,6 +546,7 @@ export proc packetBeforeHook
     mov rcx, rbp
     mov rdx, rsp
     ; r8 - packetId
+    mov [rbp+0x260], 0x1 ; assigns the correct value manually to bypass crashes - 1.20.61
     jmp onPacketBefore
 _skipEvent:
     ret
