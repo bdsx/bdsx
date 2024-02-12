@@ -2751,7 +2751,7 @@ Block.prototype.getDescriptionId = procHacker.js("?getDescriptionId@Block@@QEBA?
     this: Block,
     structureReturn: true,
 });
-Block.prototype.getRuntimeId = procHacker.js("?getRuntimeId@Block@@QEBAAEBIXZ", int32_t.ref(), { this: Block });
+Block.prototype.getRuntimeId = procHacker.js("?getRuntimeId@Block@@QEBAAEBIXZ", uint32_t.ref(), { this: Block });
 Block.prototype.getBlockEntityType = procHacker.js("?getBlockEntityType@Block@@QEBA?AW4BlockActorType@@XZ", int32_t, { this: Block });
 Block.prototype.hasBlockEntity = procHacker.js("?hasBlockEntity@Block@@QEBA_NXZ", bool_t, { this: Block });
 Block.prototype.use = procHacker.js("?use@Block@@QEBA_NAEAVPlayer@@AEBVBlockPos@@EV?$optional@VVec3@@@std@@@Z", bool_t, { this: Block }, Player, BlockPos, uint8_t);
