@@ -1,7 +1,8 @@
 {
     "files.trimTrailingWhitespace": true,
     "[markdown]": {
-        "files.trimTrailingWhitespace": false
+        "files.trimTrailingWhitespace": false,
+        "editor.formatOnSave": true
     },
     "files.exclude": {
         "**/*.js": { "when": "$(basename).ts" }
@@ -14,9 +15,6 @@
         "editor.formatOnSave": true
     },
     "[jsonc]": {
-        "editor.formatOnSave": true
-    },
-    "[markdown]": {
         "editor.formatOnSave": true
     },
     "[yaml]": {
