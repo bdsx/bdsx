@@ -101,14 +101,12 @@ events.levelSave.setInstaller(() => {
     const _onLevelSave = procHacker.hooking("?save@Level@@UEAAXXZ", void_t, null, Level)(onLevelSave);
 });
 
-events.levelTick.setInstaller(() => {
-    function onLevelTick(): void {
-        const event = new LevelTickEvent(bedrockServer.level);
-        events.levelTick.fire(event);
-        _tickCallback();
-    }
-    procHacker.hookingRawWithCallOriginal("?tick@Level@@UEAAXXZ", makefunc.np(onLevelTick, void_t), [Register.rcx], []);
-});
+function onLevelTick(): void {
+    const event = new LevelTickEvent(bedrockServer.level);
+    events.levelTick.fire(event);
+    _tickCallback();
+}
+procHacker.hookingRawWithCallOriginal("?tick@Level@@UEAAXXZ", makefunc.np(onLevelTick, void_t), [Register.rcx], []);
 
 events.levelWeatherChange.setInstaller(() => {
     function onLevelWeatherChange(level: Level, rainLevel: float32_t, rainTime: int32_t, lightningLevel: float32_t, lightningTime: int32_t): void {
