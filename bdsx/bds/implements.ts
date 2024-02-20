@@ -2336,7 +2336,7 @@ Item.prototype.getCommandNames2 = procHacker.js(
 );
 Item.prototype.getCreativeCategory = procHacker.js("?getCreativeCategory@Item@@QEBA?AW4CreativeItemCategory@@XZ", int32_t, { this: Item });
 
-ItemStack.prototype[NativeType.dtor] = vectorDeletingDestructor;
+ItemStackBase.prototype[NativeType.dtor] = vectorDeletingDestructor;
 
 Item.prototype.isArmor = procHacker.jsv("??_7ArmorItem@@6B@", "?isArmor@ArmorItem@@UEBA_NXZ", bool_t, { this: Item });
 Item.prototype.getArmorValue = procHacker.jsv("??_7ArmorItem@@6B@", "?getArmorValue@ArmorItem@@UEBAHXZ", int32_t, { this: Item });
