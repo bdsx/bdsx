@@ -29,6 +29,7 @@ import {
     int8_t,
     uint16_t,
     uint32_t,
+    uint64_as_float_t,
     uint8_t,
     void_t,
 } from "../nativetype";
@@ -1048,6 +1049,12 @@ Actor.prototype.isInPrecipitation = procHacker.js("?isInPrecipitation@Actor@@QEB
 Actor.prototype.isInLove = procHacker.js("?isInLove@Actor@@QEBA_NXZ", bool_t, {
     this: Actor,
 });
+
+Actor.prototype.getLastHurtByPlayer = procHacker.js("?getLastHurtByPlayer@Actor@@QEAAPEAVPlayer@@XZ", Player, { this: Actor });
+Actor.prototype.getLastHurtByMobTime = procHacker.js("?getLastHurtByMobTime@Actor@@QEAAHXZ", int32_t, { this: Actor });
+Actor.prototype.getLastHurtByMobTimestamp = procHacker.js("?getLastHurtByMobTimestamp@Actor@@QEAAHXZ", int32_t, { this: Actor });
+Actor.prototype.getLastHurtMobTimestamp = procHacker.js("?getLastHurtMobTimestamp@Actor@@QEAAHXZ", int32_t, { this: Actor });
+Actor.prototype.getLastHurtTimestamp = procHacker.js("?getLastHurtTimestamp@Actor@@QEBA_KXZ", uint64_as_float_t, { this: Actor });
 
 namespace ActorMobilityUtils {
     export const shouldApplyLava = procHacker.js(

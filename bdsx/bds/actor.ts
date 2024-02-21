@@ -7,7 +7,7 @@ import { CxxVector } from "../cxxvector";
 import { events } from "../event";
 import { mangle } from "../mangle";
 import { AbstractClass, NativeClass, NativeStruct, nativeClass, nativeClassUtil, nativeField } from "../nativeclass";
-import { CxxString, bin64_t, bool_t, float32_t, int32_t, int64_as_float_t, uint8_t } from "../nativetype";
+import { CxxString, bin64_t, bool_t, float32_t, int32_t, int64_as_float_t, uint64_as_float_t, uint8_t } from "../nativetype";
 import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Block, BlockSource } from "./block";
 import { BlockPos, Vec2, Vec3 } from "./blockpos";
@@ -1246,6 +1246,12 @@ export class Actor extends AbstractClass {
         abstract();
     }
     /**
+     * Separated from lastHurtByMob.
+     */
+    getLastHurtByPlayer(): Player | null {
+        abstract();
+    }
+    /**
      * Returns the last actor damage cause for the entity.
      */
     getLastHurtCause(): ActorDamageCause {
@@ -1267,6 +1273,28 @@ export class Actor extends AbstractClass {
      * Returns whether the entity was last hit by a player.
      */
     wasLastHitByPlayer(): boolean {
+        abstract();
+    }
+
+    getLastHurtByMobTime(): int32_t {
+        abstract();
+    }
+    /**
+     * Based on the current tick for the connection
+     */
+    getLastHurtByMobTimestamp(): int32_t {
+        abstract();
+    }
+    /**
+     * Based on the current tick for the connection
+     */
+    getLastHurtMobTimestamp(): int32_t {
+        abstract();
+    }
+    /**
+     * Based on the current tick in the level
+     */
+    getLastHurtTimestamp(): uint64_as_float_t {
         abstract();
     }
     /**
