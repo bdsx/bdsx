@@ -40,6 +40,7 @@ export enum MobEffectIds {
     SlowFalling,
     BadOmen,
     HeroOfTheVillage,
+    Darkness,
 }
 
 @nativeClass(null)
