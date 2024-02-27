@@ -464,6 +464,18 @@ export class ItemStackBase extends NativeClass {
     hurtAndBreak(count: number, owner: Actor | null = null): boolean {
         abstract();
     }
+    /**
+     * Returns whether the item and amount exactly match other.
+     */
+    matches(other: ItemStackBase): bool_t {
+        abstract();
+    }
+    /**
+     * Returns whether the item exactly matches other, but doesn't consider their amount
+     */
+    matchesItem(other: ItemStackBase): bool_t {
+        abstract();
+    }
 }
 
 @nativeClass(0xa0)
