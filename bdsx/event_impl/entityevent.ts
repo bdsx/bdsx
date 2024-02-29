@@ -20,12 +20,10 @@ export class EntityHurtEvent {
     constructor(public entity: Mob, public damage: number, public damageSource: ActorDamageSource, public knock: boolean, public ignite: boolean) {}
 }
 
-/**
- * @deprecated use EntityHealthChangeEvent class instead.
- */
-export class EntityHeathChangeEvent {
-    constructor(public entity: Actor, readonly oldHealth: number, public newHealth: number) {}
-}
+/** @deprecated use EntityHealthChangeEvent class instead, to match the official class name*/
+export const EntityHeathChangeEvent = EntityHealthChangeEvent;
+/** @deprecated use EntityHealthChangeEvent class instead, to match the official class name*/
+export type EntityHeathChangeEvent = EntityHealthChangeEvent;
 
 export class EntityHealthChangeEvent {
     constructor(public entity: Actor, readonly oldHealth: number, public newHealth: number) {}
