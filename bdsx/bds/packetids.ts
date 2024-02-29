@@ -85,7 +85,7 @@ export enum MinecraftPacketIds { // int32_t
     Event = 0x41,
     LegacyTelemetryEvent = 0x41,
     SpawnExperienceOrb = 0x42,
-    /** @deprecated Use ClientboundMapItemData instead, to match to official class name*/
+    /** @deprecated Use ClientboundMapItemData instead, to match the official class name*/
     MapItemData = 0x43,
     ClientboundMapItemData = 0x43,
     MapInfoRequest = 0x44,
