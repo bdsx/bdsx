@@ -20,9 +20,14 @@ export class EntityHurtEvent {
     constructor(public entity: Mob, public damage: number, public damageSource: ActorDamageSource, public knock: boolean, public ignite: boolean) {}
 }
 
-export class EntityHeathChangeEvent {
-    constructor(public entity: Actor, readonly oldHealth: number, readonly newHealth: number) {}
+export class EntityHealthChangeEvent {
+    constructor(public entity: Actor, readonly oldHealth: number, public newHealth: number) {}
 }
+
+/** @deprecated use EntityHealthChangeEvent class instead, to match the official class name*/
+export const EntityHeathChangeEvent = EntityHealthChangeEvent;
+/** @deprecated use EntityHealthChangeEvent class instead, to match the official class name*/
+export type EntityHeathChangeEvent = EntityHealthChangeEvent;
 
 export class EntityDieEvent {
     constructor(public entity: Mob, public damageSource: ActorDamageSource) {}
@@ -278,7 +283,7 @@ events.entityHurt.setInstaller(() => {
 events.entityHealthChange.setInstaller(() => {
     function onEntityHealthChange(attributeDelegate: NativePointer, oldHealth: number, newHealth: number, attributeBuffInfo: VoidPointer): float32_t {
         const actor = Actor[makefunc.getFromParam](attributeDelegate, 0x20);
-        const event = new EntityHeathChangeEvent(actor, oldHealth, newHealth);
+        const event = new EntityHealthChangeEvent(actor, oldHealth, newHealth);
         events.entityHealthChange.fire(event);
         attributeDelegate.setPointer(event.entity, 0x20);
         return _onEntityHealthChange(attributeDelegate, event.oldHealth, event.newHealth, attributeBuffInfo);

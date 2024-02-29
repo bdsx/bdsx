@@ -30,7 +30,7 @@ import type {
     EntityConsumeTotemEvent,
     EntityCreatedEvent,
     EntityDieEvent,
-    EntityHeathChangeEvent,
+    EntityHealthChangeEvent,
     EntityHurtEvent,
     EntityKnockbackEvent,
     EntitySneakEvent,
@@ -157,7 +157,7 @@ export namespace events {
     /** Cancellable */
     export const entityHurt = new Event<(event: EntityHurtEvent) => void | CANCEL>();
     /** Not cancellable */
-    export const entityHealthChange = new Event<(event: EntityHeathChangeEvent) => void>();
+    export const entityHealthChange = new Event<(event: EntityHealthChangeEvent) => void>();
     /**
      * Not cancellable.
      * it can be occurred multiple times even it already died.
