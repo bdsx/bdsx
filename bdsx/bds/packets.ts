@@ -249,6 +249,8 @@ export class LevelSettings extends MantleClass {
 export class StartGamePacket extends Packet {
     @nativeField(LevelSettings)
     readonly settings: LevelSettings;
+    @nativeField(Vec2, 0x490)
+    readonly rot: Vec2;
 }
 @nativeClass(null)
 export class AddPlayerPacket extends Packet {
