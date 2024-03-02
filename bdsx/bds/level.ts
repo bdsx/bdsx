@@ -263,7 +263,7 @@ export class Level extends NativeClass {
 
 export class ServerLevel extends Level {}
 
-@nativeClass()
+@nativeClass(null)
 export class LevelData extends NativeClass {
     getGameDifficulty(): Difficulty {
         abstract();
