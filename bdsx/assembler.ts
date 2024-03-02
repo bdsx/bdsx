@@ -3270,7 +3270,7 @@ export class X64Assembler {
         }
         js.tab(4);
 
-        const addSourceMap = (id: Identifier, name: string, columnOffset: number): void => {
+        const addSourceMap = (id: Identifier, columnOffset: number): void => {
             if (id.sourcePosition) {
                 sourceMap.addMapping({
                     original: id.sourcePosition,
@@ -3297,7 +3297,7 @@ export class X64Assembler {
                 js.writeln(`    return buffer.add(${id.offset});`);
                 js.writeln(`},`);
                 dts.writeln(`export const ${name}:NativePointer;`);
-                addSourceMap(id, name, 13);
+                addSourceMap(id, 13);
             } else if (id instanceof Definition) {
                 const off = buffer.length + id.offset;
                 if (id.size != null) {
@@ -3313,9 +3313,9 @@ export class X64Assembler {
                             js.writeln(`    buffer.set${info.fnname}(n, ${off}+idx${sizemul});`);
                             js.writeln(`},`);
                             dts.writeln(`export function get${nameUpper}(idx:number):${info.jstype};`);
-                            addSourceMap(id, `get${name}`, 16);
+                            addSourceMap(id, 16);
                             dts.writeln(`export function set${nameUpper}(n:${info.jstype}, idx:number):void;`);
-                            addSourceMap(id, `set${name}`, 16);
+                            addSourceMap(id, 16);
                         } else {
                             js.writeln(`get ${name}(){`);
                             js.writeln(`    return buffer.get${info.fnname}(${off});`);
@@ -3324,7 +3324,7 @@ export class X64Assembler {
                             js.writeln(`    buffer.set${info.fnname}(n, ${off});`);
                             js.writeln(`},`);
                             dts.writeln(`export let ${name}:${info.jstype};`);
-                            addSourceMap(id, name, 11);
+                            addSourceMap(id, 11);
                         }
                     }
                 }
@@ -3332,7 +3332,7 @@ export class X64Assembler {
                 js.writeln(`    return buffer.add(${off});`);
                 js.writeln(`},`);
                 dts.writeln(`export const ${addrof}:NativePointer;`);
-                addSourceMap(id, addrof, 13);
+                addSourceMap(id, 13);
             }
         }
         js.tab(-4);
