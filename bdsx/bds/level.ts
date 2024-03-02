@@ -1,7 +1,7 @@
 import { abstract } from "../common";
 import type { VoidPointer } from "../core";
 import { CxxVector, CxxVectorLike } from "../cxxvector";
-import { NativeClass } from "../nativeclass";
+import { nativeClass, NativeClass, nativeField } from "../nativeclass";
 import type { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, ItemActor, WeakEntityRef } from "./actor";
 import { BlockLegacy, BlockSource } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
@@ -12,6 +12,7 @@ import type { Player, ServerPlayer } from "./player";
 import type { Scoreboard } from "./scoreboard";
 import { StructureManager } from "./structure";
 import { WeakRefT } from "./weakreft";
+import { int32_t } from "../nativetype";
 
 export enum Difficulty {
     Peaceful,
@@ -262,11 +263,44 @@ export class Level extends NativeClass {
 
 export class ServerLevel extends Level {}
 
+@nativeClass()
 export class LevelData extends NativeClass {
     getGameDifficulty(): Difficulty {
         abstract();
     }
     setGameDifficulty(value: Difficulty): void {
+        abstract();
+    }
+
+    getRainLevel(): number {
+        abstract();
+    }
+
+    setRainLevel(value: number) {
+        abstract();
+    }
+
+    getRainTime(): number {
+        abstract();
+    }
+
+    setRainTime(value: number) {
+        abstract();
+    }
+
+    getLightningLevel(): number {
+        abstract();
+    }
+
+    setLightningLevel(value: number) {
+        abstract();
+    }
+
+    getLightningTime(): number {
+        abstract();
+    }
+
+    setLightningTime(value: number) {
         abstract();
     }
 }
