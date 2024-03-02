@@ -24,7 +24,7 @@ class SentForm {
         public readonly formOption: Form.Options,
     ) {
         // allocate id without duplication
-        for (; ;) {
+        for (;;) {
             const id = formIdCounter++;
             if (formIdCounter >= MAXIMUM_FORM_ID) formIdCounter = MINIMUM_FORM_ID;
 
@@ -228,7 +228,7 @@ export class Form<DATA extends FormData> {
     labels: Map<number, string> = new Map<number, string>();
     response: any;
 
-    constructor(public data: DATA) { }
+    constructor(public data: DATA) {}
 
     static sendTo<T extends FormData["type"]>(target: NetworkIdentifier, data: FormData & { type: T }, opts?: Form.Options): Promise<FormResponse<T>> {
         return new Promise<FormResponse<T>>((resolve, reject) => {
