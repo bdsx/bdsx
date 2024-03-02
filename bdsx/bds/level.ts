@@ -1,7 +1,8 @@
 import { abstract } from "../common";
 import type { VoidPointer } from "../core";
 import { CxxVector, CxxVectorLike } from "../cxxvector";
-import { nativeClass, NativeClass, nativeField } from "../nativeclass";
+import { NativeClass, nativeClass } from "../nativeclass";
+import { float32_t, int32_t } from "../nativetype";
 import type { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, ItemActor, WeakEntityRef } from "./actor";
 import { BlockLegacy, BlockSource } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
@@ -12,7 +13,6 @@ import type { Player, ServerPlayer } from "./player";
 import type { Scoreboard } from "./scoreboard";
 import { StructureManager } from "./structure";
 import { WeakRefT } from "./weakreft";
-import { int32_t } from "../nativetype";
 
 export enum Difficulty {
     Peaceful,
@@ -272,35 +272,35 @@ export class LevelData extends NativeClass {
         abstract();
     }
 
-    getRainLevel(): number {
+    getRainLevel(): float32_t {
         abstract();
     }
 
-    setRainLevel(value: number): void {
+    setRainLevel(value: float32_t): void {
         abstract();
     }
 
-    getRainTime(): number {
+    getRainTime(): int32_t {
         abstract();
     }
 
-    setRainTime(value: number): void {
+    setRainTime(value: int32_t): void {
         abstract();
     }
 
-    getLightningLevel(): number {
+    getLightningLevel(): float32_t {
         abstract();
     }
 
-    setLightningLevel(value: number): void {
+    setLightningLevel(value: float32_t): void {
         abstract();
     }
 
-    getLightningTime(): number {
+    getLightningTime(): int32_t {
         abstract();
     }
 
-    setLightningTime(value: number): void {
+    setLightningTime(value: int32_t): void {
         abstract();
     }
 }
