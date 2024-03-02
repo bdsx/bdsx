@@ -1,7 +1,8 @@
 import { abstract } from "../common";
 import type { VoidPointer } from "../core";
 import { CxxVector, CxxVectorLike } from "../cxxvector";
-import { NativeClass } from "../nativeclass";
+import { NativeClass, nativeClass } from "../nativeclass";
+import { float32_t, int32_t } from "../nativetype";
 import type { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, ItemActor, WeakEntityRef } from "./actor";
 import { BlockLegacy, BlockSource } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
@@ -262,11 +263,44 @@ export class Level extends NativeClass {
 
 export class ServerLevel extends Level {}
 
+@nativeClass(null)
 export class LevelData extends NativeClass {
     getGameDifficulty(): Difficulty {
         abstract();
     }
     setGameDifficulty(value: Difficulty): void {
+        abstract();
+    }
+
+    getRainLevel(): float32_t {
+        abstract();
+    }
+
+    setRainLevel(value: float32_t): void {
+        abstract();
+    }
+
+    getRainTime(): int32_t {
+        abstract();
+    }
+
+    setRainTime(value: int32_t): void {
+        abstract();
+    }
+
+    getLightningLevel(): float32_t {
+        abstract();
+    }
+
+    setLightningLevel(value: float32_t): void {
+        abstract();
+    }
+
+    getLightningTime(): int32_t {
+        abstract();
+    }
+
+    setLightningTime(value: int32_t): void {
         abstract();
     }
 }

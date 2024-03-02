@@ -483,6 +483,14 @@ ServerLevel.abstract({});
 
 LevelData.prototype.getGameDifficulty = procHacker.js("?getGameDifficulty@LevelData@@QEBA?AW4Difficulty@@XZ", uint32_t, { this: LevelData });
 LevelData.prototype.setGameDifficulty = procHacker.js("?setGameDifficulty@LevelData@@QEAAXW4Difficulty@@@Z", void_t, { this: LevelData }, uint32_t);
+LevelData.prototype.getRainLevel = procHacker.js("?getRainLevel@LevelData@@QEBAMXZ", float32_t, { this: LevelData });
+LevelData.prototype.setRainLevel = procHacker.js("?setRainLevel@LevelData@@QEAAXM@Z", void_t, { this: LevelData }, float32_t);
+LevelData.prototype.getRainTime = procHacker.js("?getRainTime@LevelData@@QEBAHXZ", int32_t, { this: LevelData });
+LevelData.prototype.setRainTime = procHacker.js("?setRainTime@LevelData@@QEAAXH@Z", void_t, { this: LevelData }, int32_t);
+LevelData.prototype.getLightningLevel = procHacker.js("?getLightningLevel@LevelData@@QEBAMXZ", float32_t, { this: LevelData });
+LevelData.prototype.setLightningLevel = procHacker.js("?setLightningLevel@LevelData@@QEAAXM@Z", void_t, { this: LevelData }, float32_t);
+LevelData.prototype.getLightningTime = procHacker.js("?getLightningTime@LevelData@@QEBAHXZ", int32_t, { this: LevelData });
+LevelData.prototype.setLightningTime = procHacker.js("?setLightningTime@LevelData@@QEAAXH@Z", void_t, { this: LevelData }, int32_t);
 
 JsonUtil.getBlockLegacy = procHacker.js(
     "?getBlockLegacy@JsonUtil@@YAPEBVBlockLegacy@@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
