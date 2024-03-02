@@ -24,7 +24,7 @@ class SentForm {
         public readonly formOption: Form.Options,
     ) {
         // allocate id without duplication
-        for (;;) {
+        for (; ;) {
             const id = formIdCounter++;
             if (formIdCounter >= MAXIMUM_FORM_ID) formIdCounter = MINIMUM_FORM_ID;
 
@@ -48,6 +48,7 @@ events.serverStop.on(() => {
         form.reject(Error("server closed"));
         clearTimeout(form.timeout);
     }
+
     formMaps.clear();
 });
 
@@ -227,7 +228,7 @@ export class Form<DATA extends FormData> {
     labels: Map<number, string> = new Map<number, string>();
     response: any;
 
-    constructor(public data: DATA) {}
+    constructor(public data: DATA) { }
 
     static sendTo<T extends FormData["type"]>(target: NetworkIdentifier, data: FormData & { type: T }, opts?: Form.Options): Promise<FormResponse<T>> {
         return new Promise<FormResponse<T>>((resolve, reject) => {
@@ -314,22 +315,31 @@ export class SimpleForm extends Form<FormDataSimple> {
             buttons,
         });
     }
+
     getTitle(): string {
         return this.data.title;
     }
-    setTitle(title: string): void {
+
+    setTitle(title: string): SimpleForm {
         this.data.title = title;
+        return this;
     }
+
     getContent(): string {
         return this.data.content;
     }
-    setContent(content: string): void {
+
+    setContent(content: string): SimpleForm {
         this.data.content = content;
+        return this;
     }
-    addButton(button: FormButton, label?: string): void {
+
+    addButton(button: FormButton, label?: string): SimpleForm {
         this.data.buttons!.push(button);
         if (label) this.labels.set(this.data.buttons!.length - 1, label);
+        return this;
     }
+
     getButton(indexOrLabel: string | number): FormButton | null {
         if (typeof indexOrLabel === "string") {
             for (const [index, label] of this.labels) {
@@ -352,29 +362,41 @@ export class ModalForm extends Form<FormDataModal> {
             button2: "",
         });
     }
+
     getTitle(): string {
         return this.data.title;
     }
-    setTitle(title: string): void {
+
+    setTitle(title: string): ModalForm {
         this.data.title = title;
+        return this;
     }
+
     getContent(): string {
         return this.data.content as string;
     }
-    setContent(content: string): void {
+
+    setContent(content: string): ModalForm {
         this.data.content = content;
+        return this;
     }
+
     getButtonConfirm(): string {
         return this.data.button1;
     }
-    setButtonConfirm(text: string): void {
+
+    setButtonConfirm(text: string): ModalForm {
         this.data.button1 = text;
+        return this;
     }
+
     getButtonCancel(): string {
         return this.data.button2;
     }
-    setButtonCancel(text: string): void {
+
+    setButtonCancel(text: string): ModalForm {
         this.data.button2 = text;
+        return this;
     }
 }
 
@@ -386,16 +408,22 @@ export class CustomForm extends Form<FormDataCustom> {
             content: content as FormItem[],
         });
     }
+
     getTitle(): string {
         return this.data.title;
     }
-    setTitle(title: string): void {
+
+    setTitle(title: string): CustomForm {
         this.data.title = title;
+        return this;
     }
-    addComponent(component: FormComponent, label?: string): void {
+
+    addComponent(component: FormComponent, label?: string): CustomForm {
         (this.data.content as FormComponent[]).push(component);
         if (label) this.labels.set(this.data.content!.length - 1, label);
+        return this;
     }
+
     getComponent(indexOrLabel: string | number): FormComponent | null {
         if (typeof indexOrLabel === "string") {
             for (const [index, label] of this.labels) {
