@@ -284,7 +284,7 @@ export class LevelData extends NativeClass {
         abstract();
     }
 
-    setRainTime(value: number): void  {
+    setRainTime(value: number): void {
         abstract();
     }
 
