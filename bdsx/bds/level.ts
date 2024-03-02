@@ -276,7 +276,7 @@ export class LevelData extends NativeClass {
         abstract();
     }
 
-    setRainLevel(value: number) {
+    setRainLevel(value: number): void {
         abstract();
     }
 
@@ -284,7 +284,7 @@ export class LevelData extends NativeClass {
         abstract();
     }
 
-    setRainTime(value: number) {
+    setRainTime(value: number): void  {
         abstract();
     }
 
@@ -292,7 +292,7 @@ export class LevelData extends NativeClass {
         abstract();
     }
 
-    setLightningLevel(value: number) {
+    setLightningLevel(value: number): void {
         abstract();
     }
 
@@ -300,7 +300,7 @@ export class LevelData extends NativeClass {
         abstract();
     }
 
-    setLightningTime(value: number) {
+    setLightningTime(value: number): void {
         abstract();
     }
 }
