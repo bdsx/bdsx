@@ -42,6 +42,19 @@ If you think it's more useful, please discuss it on the GitHub or Discord server
 
 It just makes unnecessary steps for using the function.
 
+### 9. Use NativeType instances (`uint32_t`, `float32_t`, ...) for numeric parameters, or return type instead of just `number`.
+
+It will help us to recognize in the code its real type in the native level.
+
+### 10. Create Pull Requests or Issues respectively if you have to report multiple.
+
+It would be more easy to review or manage the history for maintainers.
+
+### 11. Please don't create Pull Requests with your default branch (like `master` or `main`) as possible as you can.
+
+It means the branches in your fork, not the original repository.\
+Sometimes maintainers do **squash and merge** your PR, and it may make your git history or next PR dirty a little.
+
 ## Information about native level
 
 ### 1. Allocation methods
