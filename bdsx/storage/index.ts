@@ -546,11 +546,11 @@ export class StorageManager {
         return storage;
     }
 
-    getSync<T = any>(objOrKey: HasStorage | string): Storage<T> {
+    getSync<T = unknown>(objOrKey: HasStorage | string): Storage<T> {
         return this._getWithoutLoad(objOrKey).loadSync();
     }
 
-    get<T = any>(objOrKey: HasStorage | string): Promise<Storage<T>> {
+    get<T = unknown>(objOrKey: HasStorage | string): Promise<Storage<T>> {
         return this._getWithoutLoad(objOrKey).load();
     }
 

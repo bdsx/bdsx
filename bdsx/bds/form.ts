@@ -48,7 +48,6 @@ events.serverStop.on(() => {
         form.reject(Error("server closed"));
         clearTimeout(form.timeout);
     }
-
     formMaps.clear();
 });
 

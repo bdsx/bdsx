@@ -2,12 +2,12 @@ import { events } from "bdsx/event";
 import { storageManager } from "bdsx/storage";
 
 type StorageExample = {
-    a: number,
-    b: string,
-    c: number[],
-    d: boolean,
-    counter: number
-}
+    a: number;
+    b: string;
+    c: number[];
+    d: boolean;
+    counter: number;
+};
 
 // global storage
 const storage = storageManager.getSync<StorageExample>("storage_example");
@@ -28,13 +28,13 @@ console.log(`storage counter = ${storage.data.counter}`);
 // the flush delay is defined on 'storageManager.driver.flushDelay' and it can be modified.
 
 type PlayerExample = {
-    level: number,
-    money: number,
-    permaInfo: string,
-    attendance: number,
-    lastLoginDate: string,
-    object?: CustomClass,
-}
+    level: number;
+    money: number;
+    permaInfo: string;
+    attendance: number;
+    lastLoginDate: string;
+    object?: CustomClass;
+};
 
 // Storage from the player
 events.playerJoin.on(async ev => {
