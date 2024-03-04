@@ -3,11 +3,15 @@ import { ipfilter } from "bdsx/core";
 import { storageManager } from "bdsx/storage";
 
 /**
+ * [name, period]
+ */
+type Banned = [string, number][];
+/**
  * ipfilter blocks at the earliest phase of the program.
  * It will never show the messages to the users
  */
 
-let banListStorage: [string, number][] | null = null;
+let banListStorage: Banned | null = null;
 
 export function banIp(ni: NetworkIdentifier): void {
     if (banListStorage === null) throw Error("the storage is not loaded");
@@ -24,7 +28,7 @@ ipfilter.setTrafficLimitPeriod(60 * 60); // 1 Hour
 
 // load from the storage
 (async () => {
-    const storage = await storageManager.get("ipban");
+    const storage = await storageManager.get<Banned>("ipban");
     if (storage.data == null) {
         storage.init([]);
     }
