@@ -167,14 +167,14 @@ const objectProxyHandler: ProxyHandler<any> = {
     },
 };
 
-export abstract class Storage {
+export abstract class Storage<T> {
     static readonly classId = Symbol("storageClassId");
     static readonly id = Symbol("storageId");
     static readonly aliasId = Symbol("storageId");
 
-    abstract get data(): any;
+    abstract get data(): T;
     abstract get isLoaded(): boolean;
-    abstract init(value: unknown): void;
+    abstract init(value: T | undefined): void;
     abstract close(): boolean;
 
     protected constructor() {
@@ -186,7 +186,7 @@ export abstract class Storage {
     }
 }
 
-class StorageImpl extends Storage {
+class StorageImpl extends Storage<any> {
     private storageData: StorageData | null = null;
     private saving: Promise<void> | null = null;
     private modified = false;
@@ -546,26 +546,30 @@ export class StorageManager {
         return storage;
     }
 
-    getSync(objOrKey: HasStorage | string): Storage {
+    getSync<T = unknown>(objOrKey: HasStorage | string): Storage<T> {
         return this._getWithoutLoad(objOrKey).loadSync();
     }
 
-    get(objOrKey: HasStorage | string): Promise<Storage> {
+    get<T = unknown>(objOrKey: HasStorage | string): Promise<Storage<T>> {
         return this._getWithoutLoad(objOrKey).load();
     }
+
     createIndex(storageClass: StorageClassBase, indexKey: string): Promise<void> {
         const classId = storageClass[Storage.classId];
         return this.driver.createIndex(classId, indexKey);
     }
-    async *search(storageClass: StorageClassBase, indexKey: string, value: unknown): AsyncIterableIterator<Storage> {
+
+    async *search(storageClass: StorageClassBase, indexKey: string, value: unknown): AsyncIterableIterator<Storage<any>> {
         const classId = storageClass[Storage.classId];
         for await (const id of this.driver.search(classId, indexKey, value)) {
             yield await this.get(classId + "/" + id);
         }
     }
+
     listClass(): AsyncIterableIterator<string> {
         return this.driver.listClass();
     }
+
     async *list(storageClass?: StorageClassBase): AsyncIterableIterator<string> {
         const classId = storageClass == null ? null : storageClass[Storage.classId];
         for await (const id of this.driver.list(classId)) {
