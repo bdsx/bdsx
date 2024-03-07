@@ -150,3 +150,4 @@ export namespace asmcode {
     export const addressof_bdsMainThreadId:NativePointer;
     export const terminateHook:NativePointer;
 }
+//# sourceMappingURL=asmcode.asm.map

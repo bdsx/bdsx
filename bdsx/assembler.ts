@@ -7,6 +7,7 @@ import { ParsingError, ParsingErrorContainer, SourcePosition, TextLineParser } f
 import { checkPowOf2, getLineAt } from "./util";
 import { BufferReader, BufferWriter } from "./writer/bufferstream";
 import { ScriptWriter } from "./writer/scriptwriter";
+import { SourceMapGenerator } from "source-map";
 
 export enum Register {
     absolute = -2,
@@ -317,6 +318,7 @@ class AsmChunk extends BufferWriter {
 }
 
 class Identifier {
+    sourcePosition?: SourcePosition;
     constructor(public name: string | null) {}
 }
 
@@ -2874,6 +2876,7 @@ export class X64Assembler {
                     return true;
                 }
                 case "def": {
+                    const sourcePosition = parser.getPosition();
                     const name = parser.readTo(":");
                     const type = parser.readAll();
                     const res = parseType(type);
@@ -2882,12 +2885,17 @@ export class X64Assembler {
                     } catch (err) {
                         throw parser.error(err.message);
                     }
+                    const defObj = this.ids.get(name);
+                    if (defObj) defObj.sourcePosition = sourcePosition;
                     return true;
                 }
                 case "proc":
                     try {
+                        const sourcePosition = parser.getPosition();
                         const name = parser.readAll().trim();
                         this.proc(name, exportDef);
+                        const labelObj = this.ids.get(name);
+                        if (labelObj) labelObj.sourcePosition = sourcePosition;
                     } catch (err) {
                         throw parser.error(err.message);
                     }
@@ -3204,8 +3212,9 @@ export class X64Assembler {
         return out.buffer();
     }
 
-    toScript(bdsxLibPath: string, exportName?: string): { js: string; dts: string } {
+    toScript(bdsxLibPath: string, exportName?: string): { js: string; dts: string; map?: string } {
         const buffer = this.buffer();
+        const sourceMap = new SourceMapGenerator();
         const labels: Label[] = [];
         for (const addr of this.ids.values()) {
             if (!(addr instanceof Label)) continue;
@@ -3261,6 +3270,16 @@ export class X64Assembler {
         }
         js.tab(4);
 
+        const addSourceMap = (id: Identifier, columnOffset: number): void => {
+            if (id.sourcePosition) {
+                sourceMap.addMapping({
+                    original: id.sourcePosition,
+                    generated: { line: dts.lineNumber, column: dts.columnNumber + columnOffset },
+                    source: "source", // placeholder
+                });
+            }
+        };
+
         for (const id of this.ids.values()) {
             if (this.scope.has(id.name!)) continue;
             let name = id.name;
@@ -3278,6 +3297,7 @@ export class X64Assembler {
                 js.writeln(`    return buffer.add(${id.offset});`);
                 js.writeln(`},`);
                 dts.writeln(`export const ${name}:NativePointer;`);
+                addSourceMap(id, 13);
             } else if (id instanceof Definition) {
                 const off = buffer.length + id.offset;
                 if (id.size != null) {
@@ -3293,7 +3313,9 @@ export class X64Assembler {
                             js.writeln(`    buffer.set${info.fnname}(n, ${off}+idx${sizemul});`);
                             js.writeln(`},`);
                             dts.writeln(`export function get${nameUpper}(idx:number):${info.jstype};`);
+                            addSourceMap(id, 16);
                             dts.writeln(`export function set${nameUpper}(n:${info.jstype}, idx:number):void;`);
+                            addSourceMap(id, 16);
                         } else {
                             js.writeln(`get ${name}(){`);
                             js.writeln(`    return buffer.get${info.fnname}(${off});`);
@@ -3302,6 +3324,7 @@ export class X64Assembler {
                             js.writeln(`    buffer.set${info.fnname}(n, ${off});`);
                             js.writeln(`},`);
                             dts.writeln(`export let ${name}:${info.jstype};`);
+                            addSourceMap(id, 11);
                         }
                     }
                 }
@@ -3309,6 +3332,7 @@ export class X64Assembler {
                 js.writeln(`    return buffer.add(${off});`);
                 js.writeln(`},`);
                 dts.writeln(`export const ${addrof}:NativePointer;`);
+                addSourceMap(id, 13);
             }
         }
         js.tab(-4);
@@ -3325,6 +3349,14 @@ export class X64Assembler {
 
             const labels = this.labels(true);
             js.writeln(`asm.setFunctionNames(buffer, ${JSON.stringify(labels)});`);
+        }
+
+        if (exportName) {
+            const sourceMapJSON = JSON.parse(sourceMap.toString());
+            sourceMapJSON.file = `${exportName}.d.ts`;
+            sourceMapJSON.sourceRoot = "";
+            sourceMapJSON.sources = [`${exportName}.asm`];
+            return { js: js.script, dts: dts.script, map: JSON.stringify(sourceMapJSON) };
         }
 
         return { js: js.script, dts: dts.script };

@@ -16,9 +16,10 @@ try {
         PACKET_ID_COUNT,
     };
     code.compile(fs.readFileSync(asmpath, "utf8"), defines, asmpath);
-    const { js, dts } = code.toScript("..", "asmcode");
+    const { js, dts, map } = code.toScript("..", "asmcode");
     fs.writeFileSync(path.join(__dirname, "./asmcode.js"), js);
-    fs.writeFileSync(path.join(__dirname, "./asmcode.d.ts"), dts);
+    fs.writeFileSync(path.join(__dirname, "./asmcode.d.ts"), dts + `//# sourceMappingURL=asmcode.asm.map\n`);
+    fs.writeFileSync(path.join(__dirname, "./asmcode.asm.map"), map!);
     console.log(`[bdsx-asm] done. no errors`);
 } catch (err) {
     if (!(err instanceof ParsingError)) {
