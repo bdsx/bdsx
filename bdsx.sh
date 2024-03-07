@@ -34,11 +34,11 @@ while :; do
 # shellprepare
 npm run -s shellprepare
 exitcode=$?
-if [ $exitcode == 2 ]; then
+if [ $exitcode -eq 2 ]; then
   rm -rf ./node_modules
   ./update.sh
   continue
-elif [ $exitcode != 1 ]; then
+elif [ $exitcode -ne 1 ]; then
   break
 fi
 
