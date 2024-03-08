@@ -1340,11 +1340,13 @@ Mob.prototype.getArmorCoverPercentage = procHacker.js("?getArmorCoverPercentage@
 Mob.prototype.getToughnessValue = function () {
     let toughness = 0;
     const armors = this.getArmorContainer();
-    for (const stack of armors.getSlots()) {
+    const slots = armors.getSlots();
+    for (const stack of slots) {
         const item = stack.getItem();
         if (item === null) continue;
         toughness += item.getToughnessValue();
     }
+    slots.destruct();
     return toughness;
 };
 Mob.prototype.isBlocking = procHacker.jsv("??_7Mob@@6B@", "?isBlocking@Mob@@UEBA_NXZ", bool_t, { this: Mob });
