@@ -9,16 +9,15 @@ import { destackThrow } from "../source-map-support";
 import { TextParser } from "../textparser";
 import { timeout } from "../util";
 
-namespace procNamespace {
-    export const vftable: { readonly [key: string]: [number, number?] } = {};
-}
+type PROC_T = { readonly vftable: { readonly [key: string]: [number, number?] } }; // [offsets in vftable, offset of vftable]
 
 /**
  * @remark Backward compatibility cannot be guaranteed. The symbol name can be changed by BDS updating.
  */
-export const proc = procNamespace as {
-    readonly [key: string]: NativePointer;
-} & typeof procNamespace;
+export const proc = {
+    vftable: {},
+} as PROC_T & { readonly [key: string]: NativePointer };
+// vf
 
 (proc as any).__proto__ = new Proxy(
     {},
