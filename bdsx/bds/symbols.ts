@@ -9,7 +9,7 @@ import { destackThrow } from "../source-map-support";
 import { TextParser } from "../textparser";
 import { timeout } from "../util";
 
-namespace procNamespace {
+export namespace procNamespace {
     export const vftable: { readonly [key: string]: [number, number?] } = {};
 }
 
