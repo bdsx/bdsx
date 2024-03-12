@@ -17,7 +17,6 @@ type PROC_T = { readonly vftable: { readonly [key: string]: [number, number?] } 
 export const proc = {
     vftable: {},
 } as PROC_T & { readonly [key: string]: NativePointer };
-// vf
 
 (proc as any).__proto__ = new Proxy(
     {},
