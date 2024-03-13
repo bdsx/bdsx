@@ -91,6 +91,7 @@ export enum MinecraftPacketIds { // int32_t
     MapInfoRequest = 0x44,
     RequestChunkRadius = 0x45,
     ChunkRadiusUpdated = 0x46,
+    /** @deprecated removed */
     ItemFrameDropItem = 0x47,
     GameRulesChanged = 0x48,
     Camera = 0x49,

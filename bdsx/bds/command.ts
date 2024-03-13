@@ -517,10 +517,34 @@ export class CommandMessage extends NativeClass {
     static readonly [CommandParameterType.symbol]: true;
     data: CxxVector<CommandMessage.MessageComponent>;
 
-    getMessage(origin: CommandOrigin): string {
+    /**
+     * @alias generateMessage but safe
+     */
+    getMessage(origin: CommandOrigin, maxLength = 128): string {
+        const genres = this.generateMessage(origin, maxLength);
+        const message = genres.message;
+        genres.destruct();
+        return message;
+    }
+
+    generateMessage(origin: CommandOrigin, maxLength: int32_t): GenerateMessageResult {
         abstract();
     }
 }
+
+@nativeClass(0x20)
+class GenerateMessageResult extends NativeClass {
+    @nativeField(CxxString)
+    message: CxxString;
+}
+
+CommandMessage.prototype.generateMessage = procHacker.js(
+    "?generateMessage@CommandMessage@@QEBA?AUGenerateMessageResult@@AEBVCommandOrigin@@H@Z",
+    GenerateMessageResult,
+    { this: CommandMessage, structureReturn: true },
+    CommandOrigin,
+    int32_t,
+);
 
 export namespace CommandMessage {
     @nativeClass(0x28)
@@ -537,12 +561,6 @@ CommandMessage.abstract(
         data: CxxVector.make(CommandMessage.MessageComponent),
     },
     0x18,
-);
-CommandMessage.prototype.getMessage = procHacker.js(
-    "?getMessage@CommandMessage@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBVCommandOrigin@@@Z",
-    CxxString,
-    { this: CommandMessage, structureReturn: true },
-    CommandOrigin,
 );
 
 @nativeClass()

@@ -1122,7 +1122,7 @@ const getConditionalBandwidthComponent = procHacker.js(
     Actor,
 );
 
-(Actor.prototype as any)._tryGetComponent = (comp: string) => {
+(Actor.prototype as any)._tryGetComponent = function (comp: string) {
     switch (comp) {
         case "minecraft:projectile":
             return getProjectileComponent(this);
@@ -1178,7 +1178,6 @@ ProjectileComponent.prototype.setOwnerId = procHacker.js(
 );
 
 DamageSensorComponent.prototype.isFatal = procHacker.js("?isFatal@DamageSensorComponent@@QEBA_NXZ", bool_t, { this: DamageSensorComponent });
-DamageSensorComponent.prototype.getDamageModifier = procHacker.js("?getDamageModifier@DamageSensorComponent@@QEAAMXZ", float32_t, { this: DamageSensorComponent });
 
 CommandBlockComponent.prototype.addAdditionalSaveData = procHacker.js(
     "?addAdditionalSaveData@CommandBlockComponent@@QEBAXAEAVCompoundTag@@@Z",
@@ -1516,7 +1515,7 @@ ActorDamageByChildActorSource.constructWith = function (
 };
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 0x4d0], // accessed in ItemActor::isFireImmune
+    itemStack: [ItemStack, 0x498], // accessed in ItemActor::isFireImmune
 });
 
 ServerPlayer.prototype.setAttribute = function (id: AttributeId, value: number): AttributeInstance | null {
@@ -1565,9 +1564,9 @@ procHacker.hookingRawWithCallOriginal("??1Actor@@UEAA@XZ", asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
-    enderChestContainer: [EnderChestContainer.ref(), 0xcf0], // accessed in Player::Player+1222 (the line between two if-else statements, the first if statement calls EnderChestContainer::EnderChestContainer)
-    playerUIContainer: [PlayerUIContainer, 0xda8], // accessed in Player::readAdditionalSaveData+1256 when calling PlayerUIContainer::load
-    deviceId: [CxxString, 0x1d90], // accessed in AddPlayerPacket::AddPlayerPacket(const Player &)+193 (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
+    enderChestContainer: [EnderChestContainer.ref(), 0xcb0], // accessed in Player::Player+1222 (the line between two if-else statements, the first if statement calls EnderChestContainer::EnderChestContainer)
+    playerUIContainer: [PlayerUIContainer, 0xd68], // accessed in Player::readAdditionalSaveData+1256 when calling PlayerUIContainer::load
+    deviceId: [CxxString, 0x1dc0], // accessed in AddPlayerPacket::AddPlayerPacket(const Player &)+193 (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js(
     "?setName@Player@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
@@ -2735,13 +2734,17 @@ BlockLegacy.prototype.use = procHacker.jsv(
     BlockPos,
     uint8_t,
 );
-BlockLegacy.prototype.getSilkTouchedItemInstance = procHacker.jsv(
+BlockLegacy.prototype.asItemInstance = procHacker.jsv(
     "??_7BlockLegacy@@6B@",
-    "?getSilkTouchItemInstance@BlockLegacy@@MEBA?AVItemInstance@@AEBVBlock@@@Z",
-    ItemStack,
+    "?asItemInstance@BlockLegacy@@UEBA?AVItemInstance@@AEBVBlock@@PEBVBlockActor@@@Z",
+    ItemStackBase,
     { this: BlockLegacy, structureReturn: true },
     Block,
+    BlockActor,
 );
+BlockLegacy.prototype.getSilkTouchedItemInstance = function (block) {
+    return this.asItemInstance(this.getRenderBlock());
+};
 
 (Block.prototype as any)._getName = procHacker.js("?getName@Block@@QEBAAEBVHashedString@@XZ", HashedString, { this: Block });
 Block.create = function (blockName: string, data: number = 0): Block | null {
@@ -2776,8 +2779,29 @@ Block.prototype.hasBlockEntity = procHacker.js("?hasBlockEntity@Block@@QEBA_NXZ"
 Block.prototype.use = procHacker.js("?use@Block@@QEBA_NAEAVPlayer@@AEBVBlockPos@@EV?$optional@VVec3@@@std@@@Z", bool_t, { this: Block }, Player, BlockPos, uint8_t);
 Block.prototype.getVariant = procHacker.js("?getVariant@Block@@QEBAHXZ", int32_t, { this: Block });
 Block.prototype.getSerializationId = procHacker.js("?getSerializationId@Block@@QEBAAEBVCompoundTag@@XZ", CompoundTag.ref(), { this: Block });
+(Block.prototype as any)._asItemInstance1 = procHacker.js(
+    "?asItemInstance@Block@@QEBA?AVItemInstance@@AEAVBlockSource@@AEBVBlockPos@@@Z",
+    ItemStack,
+    {
+        this: Block,
+        structureReturn: true,
+    },
+    BlockSource,
+    BlockPos,
+);
+(Block.prototype as any)._asItemInstance2 = procHacker.js(
+    "?asItemInstance@Block@@QEBA?AVItemInstance@@AEAVBlockSource@@AEBVBlockPos@@_N@Z",
+    ItemStack,
+    {
+        this: Block,
+        structureReturn: true,
+    },
+    BlockSource,
+    BlockPos,
+    bool_t,
+);
 Block.prototype.getSilkTouchItemInstance = function () {
-    return this.blockLegacy.getSilkTouchedItemInstance(this);
+    return this.blockLegacy.asItemInstance(this);
 };
 Block.prototype.isUnbreakable = procHacker.js("?isUnbreakable@Block@@QEBA_NXZ", bool_t, { this: Block });
 Block.prototype.buildDescriptionId = procHacker.js("?buildDescriptionId@Block@@QEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ", CxxString, {
@@ -2958,7 +2982,7 @@ PistonBlockActor.prototype.getFacingDir = procHacker.js(
     BlockSource,
 );
 
-BlockSource.prototype.getChunk = procHacker.js("?getChunk@BlockSource@@QEBAPEAVLevelChunk@@AEBVChunkPos@@@Z", LevelChunk, { this: BlockSource }, ChunkPos);
+BlockSource.prototype.getChunk = procHacker.js("?getChunk@BlockSource@@UEBAPEAVLevelChunk@@AEBVChunkPos@@@Z", LevelChunk, { this: BlockSource }, ChunkPos);
 BlockSource.prototype.getChunkAt = procHacker.js("?getChunkAt@BlockSource@@UEBAPEAVLevelChunk@@AEBVBlockPos@@@Z", LevelChunk, { this: BlockSource }, BlockPos);
 BlockSource.prototype.getChunkSource = procHacker.js("?getChunkSource@BlockSource@@UEAAAEAVChunkSource@@XZ", ChunkSource, { this: BlockSource });
 BlockSource.prototype.checkBlockDestroyPermission = procHacker.js(

@@ -851,7 +851,7 @@ Tester.concurrency(
         },
 
         async checkPacketNames() {
-            const deletePackets = new Set([MinecraftPacketIds.AdventureSettings, MinecraftPacketIds.CraftingEvent]);
+            const deletePackets = new Set([MinecraftPacketIds.AdventureSettings, MinecraftPacketIds.CraftingEvent, MinecraftPacketIds.ItemFrameDropItem]);
             for (const id in PacketIdToType) {
                 try {
                     const Packet = PacketIdToType[+id as keyof PacketIdToType];

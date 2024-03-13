@@ -2,7 +2,7 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import type { CxxVector } from "../cxxvector";
 import { nativeClass, NativeClass, nativeField } from "../nativeclass";
-import { bool_t, CxxString, CxxStringWith8Bytes, uint32_t, int32_t, int8_t, uint16_t, uint8_t } from "../nativetype";
+import { bool_t, CxxString, CxxStringWith8Bytes, int32_t, int8_t, uint16_t, uint32_t, uint8_t } from "../nativetype";
 import type { Actor, DimensionId, ItemActor } from "./actor";
 import type { ChunkPos } from "./blockpos";
 import { BlockPos } from "./blockpos";
@@ -90,7 +90,16 @@ export class BlockLegacy extends NativeClass {
     tryGetStateFromLegacyData(data: uint16_t, u?: bool_t): Block {
         abstract();
     }
-    getSilkTouchedItemInstance(block: Block): ItemStack {
+    /**
+     * @deprecated please use `asItemInstance` instead.
+     */
+    getSilkTouchedItemInstance(block: Block): ItemStackBase {
+        abstract();
+    }
+    /**
+     * @returns need to destruct
+     */
+    asItemInstance(block: Block, BlockActor: BlockActor | null = null): ItemStackBase {
         abstract();
     }
     getDestroySpeed(): number {
@@ -165,8 +174,21 @@ export class Block extends NativeClass {
     getSerializationId(): CompoundTag {
         abstract();
     }
-    getSilkTouchItemInstance(): ItemStack {
+    getSilkTouchItemInstance(): ItemStackBase {
         abstract();
+    }
+    protected _asItemInstance1(region: BlockSource, blockPos: BlockPos): ItemStackBase {
+        abstract();
+    }
+    protected _asItemInstance2(region: BlockSource, blockPos: BlockPos, copyWholeData: bool_t): ItemStackBase {
+        abstract();
+    }
+    asItemInstance(region: BlockSource, blockPos: BlockPos, copyWholeData: boolean = false): ItemStackBase {
+        if (copyWholeData) {
+            return this._asItemInstance2(region, blockPos, true);
+        } else {
+            return this._asItemInstance1(region, blockPos);
+        }
     }
     isUnbreakable(): boolean {
         abstract();

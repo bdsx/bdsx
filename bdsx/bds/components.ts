@@ -113,9 +113,6 @@ export class DamageSensorComponent extends AbstractClass {
     isFatal(): boolean {
         abstract();
     }
-    getDamageModifier(): number {
-        abstract();
-    }
 }
 /**
  * maybe used for command block minecart.

@@ -1035,6 +1035,9 @@ export class ChunkRadiusUpdatedPacket extends Packet {
     // unknown
 }
 
+/**
+ * @deprecated removed
+ */
 @nativeClass(null)
 export class ItemFrameDropItemPacket extends Packet {
     // unknown
