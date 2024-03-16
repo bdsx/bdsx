@@ -343,7 +343,7 @@ export enum ActorDamageCause {
     EntityExplosion,
     Void,
     SelfDestruct,
-    /** @deprecated deleted on 1.20.70 */
+    /** @deprecated following the official name */
     Suicide = 13,
     Magic,
     Wither,
