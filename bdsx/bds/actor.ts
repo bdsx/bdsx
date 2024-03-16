@@ -325,10 +325,9 @@ export class ActorDamageByChildActorSource extends ActorDamageByActorSource {
 }
 
 export enum ActorDamageCause {
+    None = -1,
     /** The kill command */
     Override,
-    /** @deprecated */
-    None = 0,
     Contact,
     EntityAttack,
     Projectile,
@@ -343,7 +342,9 @@ export enum ActorDamageCause {
     BlockExplosion,
     EntityExplosion,
     Void,
-    Suicide,
+    SelfDestruct,
+    /** @deprecated deleted on 1.20.70 */
+    Suicide = 13,
     Magic,
     Wither,
     Starve,
@@ -362,6 +363,8 @@ export enum ActorDamageCause {
     Stalagmite,
     RamAttack,
     SonicBoom,
+    Campfire,
+    SoulCampfire,
     All = 0x22,
 }
 
