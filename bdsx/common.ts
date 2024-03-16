@@ -62,6 +62,7 @@ export enum BuildPlatform {
     NINTENDO = 12,
     XBOX = 13,
     WINDOWS_PHONE = 14,
+    Linux = 15,
 }
 /** @deprecated use {@link BuildPlatform}, matching to official name */
 export type DeviceOS = BuildPlatform;

@@ -1870,7 +1870,6 @@ export namespace PlayerAuthInputPacket {
         DescendScaffolding,
         SneakToggleDown,
         PersistSneak,
-        // 0-24: These are all from IDA, PlayerAuthInputPacket::InputData in 1.14.60.5
         StartSprinting,
         StopSprinting,
         StartSneaking,
@@ -1890,7 +1889,11 @@ export namespace PlayerAuthInputPacket {
         StopCrawling,
         StartFlying,
         StopFlying,
-        AckActorData,
+        AckActorData, // DOC: ClientAckServerData
+        IsInClientPredictedVehicle,
+        PaddingLeft,
+        PaddingRight,
+        INPUT_NUM,
     }
 }
 
