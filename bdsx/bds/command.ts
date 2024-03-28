@@ -532,10 +532,12 @@ export class CommandMessage extends NativeClass {
     }
 }
 
-@nativeClass(0x20)
+@nativeClass()
 class GenerateMessageResult extends NativeClass {
     @nativeField(CxxString)
     message: CxxString;
+    @nativeField(bool_t)
+    untouched: bool_t;
 }
 
 CommandMessage.prototype.generateMessage = procHacker.js(
