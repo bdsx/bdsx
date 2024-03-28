@@ -263,10 +263,10 @@ function _launch(asyncResolve: () => void): void {
         // prettier-ignore
         [
             0x48, 0x8B, 0xD9, // mov rbx,rcx
-            0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call <bedrock_server.<lambda_71c612a260bddd081da5a9a90baf1504>::operator()>
-            0xE8, 0xFF, 0xFF, 0xFF, 0xFF, // call <bedrock_server._Cnd_do_broadcast_at_thread_exit>
+            0xE8, null, null, null, null, // call <bedrock_server.<lambda_71c612a260bddd081da5a9a90baf1504>::operator()>
+            0xE8, null, null, null, null, // call <bedrock_server._Cnd_do_broadcast_at_thread_exit>
         ],
-        [4, 8, 9, 13], // [4, 8), [9, 13)
+        // [4, 8, 9, 13], // [4, 8), [9, 13)
     );
 
     const instances = {} as {
