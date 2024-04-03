@@ -1426,14 +1426,13 @@ export class Actor extends AbstractClass {
     }
 
     /**
+     * @deprecated removed
+     *
      * Changes the actor's size
      * @remarks This function does not update the actor's skin size.
-     *
-     * @param width - New width
-     * @param height - New height
      */
-    setSize(width: number, height: number): void {
-        abstract();
+    setSize(width: number, height: number): never {
+        throw Error("Removed function");
     }
 
     isInsidePortal(): boolean {
@@ -1500,19 +1499,23 @@ export class Actor extends AbstractClass {
     }
 
     /**
+     * @deprecated removed
+     *
      * Scale: 1 is for adult (normal), 0.5 is for baby.
      * It changes the size of Hitbox, and entity's size.
      */
-    setScale(scale: float32_t): void {
-        const entityData = this.getEntityData();
-        entityData.setFloat(ActorDataIDs.Scale, scale);
+    setScale(scale: float32_t): never {
+        // const entityData = this.getEntityData();
+        // entityData.setFloat(ActorDataIDs.Scale, scale);
+        throw Error("Removed function");
     }
     /**
+     * @deprecated removed
+     *
      * Scale: 1 is for adult (normal), 0.5 is for baby.
      */
     getScale(): float32_t {
-        const entityData = this.getEntityData();
-        return entityData.getFloat(ActorDataIDs.Scale);
+        return 1;
     }
 
     getOwner(): Mob | null {
@@ -1594,8 +1597,11 @@ export class SynchedActorDataEntityWrapper extends AbstractClass {
 
 export enum ActorDataIDs /** : unsigned short */ {
     Variant = 0x02, // used as int, in Actor::setVariant
+    /** @deprecated removed. */
     Scale = 0x26, // used as float, in Actor::setSize
+    /** @deprecated removed. */
     Width = 0x35, // used as float, in Actor::setSize
+    /** @deprecated removed. */
     Height = 0x36, // used as float, in Actor::setSize
 }
 

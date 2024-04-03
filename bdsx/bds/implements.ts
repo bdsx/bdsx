@@ -1037,11 +1037,6 @@ Actor.prototype.getLastDeathDimension = procHacker.jsv(
 (Actor.prototype as any)._getViewVector = procHacker.js("?getViewVector@Actor@@QEBA?AVVec3@@M@Z", Vec3, { this: Actor, structureReturn: true }, float32_t);
 Actor.prototype.isImmobile = procHacker.jsv("??_7Actor@@6B@", "?isImmobile@Actor@@UEBA_NXZ", bool_t, { this: Actor });
 Actor.prototype.isSwimming = procHacker.js("?isSwimming@Actor@@QEBA_NXZ", bool_t, { this: Actor });
-Actor.prototype.setSize = function (width, height) {
-    const entityData = this.getEntityData();
-    entityData.setFloat(ActorDataIDs.Width, width);
-    entityData.setFloat(ActorDataIDs.Height, height);
-};
 Actor.prototype.isInsidePortal = procHacker.js("?isInsidePortal@Actor@@QEBA_NXZ", bool_t, { this: Actor });
 Actor.prototype.isInWorld = procHacker.js("?isInWorld@Actor@@QEBA_NXZ", bool_t, { this: Actor });
 Actor.prototype.isInWaterOrRain = procHacker.js("?isInWaterOrRain@Actor@@QEBA_NXZ", bool_t, { this: Actor });

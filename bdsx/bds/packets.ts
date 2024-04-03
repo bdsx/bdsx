@@ -461,9 +461,9 @@ export namespace ActorEventPacket {
         Jump = 1,
         HurtAnimation,
         DeathAnimation,
-        StartAttack,
         /** @deprecated following the official name */
         ArmSwing = 4,
+        StartAttack = 4,
         StopAttack,
         TameFail,
         TameSuccess,
@@ -505,9 +505,9 @@ export namespace ActorEventPacket {
         CompleteTrade,
         RemoveLeash,
         ConsumeTotem = 65,
-        UpdateStructureFeature,
         /** @deprecated following the official name */
         PlayerCheckTreasureHunterAchievement = 66,
+        UpdateStructureFeature = 66,
         EntitySpawn, // by player
         DragonPuke,
         ItemEntityMerge,
