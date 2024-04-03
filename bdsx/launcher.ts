@@ -499,6 +499,8 @@ function _launch(asyncResolve: () => void): void {
         if (!ev.restart) {
             events.serverStop.fire();
             _tickCallback();
+        } else {
+            events.resourceReload.fire();
         }
         sendEvent(_this, ev);
     });

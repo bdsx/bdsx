@@ -300,6 +300,8 @@ export namespace events {
      */
     export const serverLog = new Event<(log: string, color: Color) => void | CANCEL>();
 
+    export const resourceReload = new Event<() => void>();
+
     ////////////////////////////////////////////////////////
     // Packet events
 
