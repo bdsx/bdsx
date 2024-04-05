@@ -44,7 +44,6 @@ import {
     ActorDamageByChildActorSource,
     ActorDamageCause,
     ActorDamageSource,
-    ActorDataIDs,
     ActorDefinitionIdentifier,
     ActorRuntimeID,
     ActorType,
@@ -497,6 +496,14 @@ JsonUtil.getBlockLegacy = procHacker.js(
     BlockLegacy,
     null,
     CxxString,
+);
+
+BlockPalette.prototype.getBlock = procHacker.jsv(
+    "??_7BlockPalette@@6B@",
+    "?getBlock@BlockPalette@@UEBAAEBVBlock@@AEBI@Z",
+    Block,
+    { this: BlockPalette },
+    uint32_t.ref(),
 );
 
 const Spawner$spawnItem = procHacker.js(

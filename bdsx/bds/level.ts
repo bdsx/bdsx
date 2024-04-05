@@ -2,9 +2,9 @@ import { abstract } from "../common";
 import type { VoidPointer } from "../core";
 import { CxxVector, CxxVectorLike } from "../cxxvector";
 import { NativeClass, nativeClass } from "../nativeclass";
-import { float32_t, int32_t } from "../nativetype";
+import { float32_t, int32_t, uint32_t } from "../nativetype";
 import type { Actor, ActorDefinitionIdentifier, ActorRuntimeID, ActorUniqueID, DimensionId, EntityContext, ItemActor, WeakEntityRef } from "./actor";
-import { BlockLegacy, BlockSource } from "./block";
+import { Block, BlockLegacy, BlockSource } from "./block";
 import type { BlockPos, Vec3 } from "./blockpos";
 import type { Dimension } from "./dimension";
 import type { GameRules } from "./gamerules";
@@ -322,6 +322,13 @@ export class BlockPalette extends NativeClass {
      */
     getBlockLegacy(name: BlockId | string): BlockLegacy {
         return JsonUtil.getBlockLegacy(name);
+    }
+
+    /**
+     * Returns minecraft:air if it doesn't exist.
+     */
+    getBlock(runtimeId: uint32_t): Block {
+        abstract();
     }
 }
 
