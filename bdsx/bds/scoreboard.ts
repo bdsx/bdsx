@@ -20,6 +20,9 @@ export class Scoreboard extends AbstractClass {
         abstract();
     }
 
+    /**
+     * create FakePlayerScoreboardId
+     */
     createScoreboardId(name: string): ScoreboardId {
         abstract();
     }
@@ -61,7 +64,7 @@ export class Scoreboard extends AbstractClass {
         abstract();
     }
 
-    getScoreboardIdentityRef(id: ScoreboardId): ScoreboardIdentityRef {
+    getScoreboardIdentityRef(id: ScoreboardId): ScoreboardIdentityRef | null {
         abstract();
     }
 
@@ -115,19 +118,19 @@ export class Scoreboard extends AbstractClass {
     }
 
     setPlayerScore(id: ScoreboardId, objective: Objective, value: number): number {
-        const retval = this.getScoreboardIdentityRef(id).modifyScoreInObjective(objective, value, PlayerScoreSetFunction.Set);
+        const retval = this.getScoreboardIdentityRef(id)?.modifyScoreInObjective(objective, value, PlayerScoreSetFunction.Set) || 0;
         this.sync(id, objective);
         return retval;
     }
 
     addPlayerScore(id: ScoreboardId, objective: Objective, value: number): number {
-        const retval = this.getScoreboardIdentityRef(id).modifyScoreInObjective(objective, value, PlayerScoreSetFunction.Add);
+        const retval = this.getScoreboardIdentityRef(id)?.modifyScoreInObjective(objective, value, PlayerScoreSetFunction.Add) || 0;
         this.sync(id, objective);
         return retval;
     }
 
     removePlayerScore(id: ScoreboardId, objective: Objective, value: number): number {
-        const retval = this.getScoreboardIdentityRef(id).modifyScoreInObjective(objective, value, PlayerScoreSetFunction.Subtract);
+        const retval = this.getScoreboardIdentityRef(id)?.modifyScoreInObjective(objective, value, PlayerScoreSetFunction.Subtract) || 0;
         this.sync(id, objective);
         return retval;
     }
