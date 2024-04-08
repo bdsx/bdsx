@@ -526,7 +526,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
      * @param returnType *_t or *Pointer
      * @param params *_t or *Pointer
      */
-    jsv<OPTS extends MakeFuncOptions<any> | null, RETURN extends ParamType, PARAMS extends ParamType[]>(
+    jsv<OPTS extends MakeFuncOptions<any> & { this: unknown }, RETURN extends ParamType, PARAMS extends ParamType[]>(
         vftable: Extract<keyof T, string>,
         key: Extract<keyof T, string>,
         returnType: RETURN,
