@@ -3244,17 +3244,32 @@ const Scoreboard$getFakePlayerScoreboardId = procHacker.js(
     CxxString,
 );
 
+const Scoreboard$createActorScoreboardId = procHacker.jsv(
+    "??_7ServerScoreboard@@6B@",
+    "?createScoreboardId@ServerScoreboard@@UEAAAEBUScoreboardId@@AEBVActor@@@Z",
+    ScoreboardId,
+    { this: Scoreboard },
+    Actor,
+);
+const Scoreboard$createPlayerScoreboardId = procHacker.jsv(
+    "??_7ServerScoreboard@@6B@",
+    "?createScoreboardId@ServerScoreboard@@UEAAAEBUScoreboardId@@AEBVPlayer@@@Z",
+    ScoreboardId,
+    { this: Scoreboard },
+    Player,
+);
+
 Scoreboard.prototype.getActorScoreboardId = function (target) {
     const id = Scoreboard$getActorScoreboardId(this, target);
     if (id.id === bin64_t.minus_one) {
-        return Scoreboard$createActorScoreboardId(this, target);
+        return Scoreboard$createActorScoreboardId.call(this, target);
     }
     return id;
 };
 Scoreboard.prototype.getPlayerScoreboardId = function (target) {
     const id = Scoreboard$getPlayerScoreboardId(this, target);
     if (id.id === bin64_t.minus_one) {
-        return Scoreboard$createPlayerScoreboardId(this, target);
+        return Scoreboard$createPlayerScoreboardId.call(this, target);
     }
     return id;
 };
@@ -3266,22 +3281,6 @@ Scoreboard.prototype.getFakePlayerScoreboardId = function (target) {
     return id;
 };
 
-const Scoreboard$createActorScoreboardId = procHacker.jsv(
-    "??_7ServerScoreboard@@6B@",
-    "?createScoreboardId@ServerScoreboard@@UEAAAEBUScoreboardId@@AEBVActor@@@Z",
-    ScoreboardId,
-    null,
-    Scoreboard,
-    Actor,
-);
-const Scoreboard$createPlayerScoreboardId = procHacker.jsv(
-    "??_7ServerScoreboard@@6B@",
-    "?createScoreboardId@ServerScoreboard@@UEAAAEBUScoreboardId@@AEBVPlayer@@@Z",
-    ScoreboardId,
-    null,
-    Scoreboard,
-    Player,
-);
 Scoreboard.prototype.getScoreboardIdentityRef = procHacker.js(
     "?getScoreboardIdentityRef@Scoreboard@@QEAAPEAVScoreboardIdentityRef@@AEBUScoreboardId@@@Z",
     ScoreboardIdentityRef,
