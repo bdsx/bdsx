@@ -193,6 +193,7 @@ export enum MinecraftPacketIds { // int32_t
     PlayerFog = 0xa0,
     CorrectPlayerMovePrediction = 0xa1,
     ItemComponent = 0xa2,
+    /** @deprecated removed */
     FilterText = 0xa3,
     ClientboundDebugRenderer = 0xa4,
     SyncActorProperty = 0xa5,

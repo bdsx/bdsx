@@ -960,8 +960,33 @@ Actor.prototype.isInvisible = procHacker.js("?isInvisible@Actor@@UEBA_NXZ", bool
 (Actor.prototype as any)._isPassenger = procHacker.js("?isPassenger@Actor@@QEBA_NAEBV1@@Z", bool_t, { this: Actor }, Actor);
 Actor.prototype.setVelocity = procHacker.js("?setVelocity@Actor@@QEAAXAEBVVec3@@@Z", void_t, { this: Actor }, Vec3);
 Actor.prototype.isInWater = procHacker.js("?isInWater@Actor@@QEBA_NXZ", bool_t, { this: Actor });
-Actor.prototype.getArmorContainer = procHacker.js("?getArmorContainer@Actor@@QEAAAEAVSimpleContainer@@XZ", SimpleContainer, { this: Actor });
-Actor.prototype.getHandContainer = procHacker.js("?getHandContainer@Actor@@QEAAAEAVSimpleContainer@@XZ", SimpleContainer, { this: Actor });
+
+namespace ActorEquipment {
+    export function getArmorContainer(context: EntityContext): SimpleContainer {
+        abstract();
+    }
+    export function getHandContainer(context: EntityContext): SimpleContainer {
+        abstract();
+    }
+}
+ActorEquipment.getArmorContainer = procHacker.js(
+    "?getArmorContainer@ActorEquipment@@YAAEBVSimpleContainer@@AEBVEntityContext@@@Z",
+    SimpleContainer,
+    null,
+    EntityContext,
+);
+ActorEquipment.getHandContainer = procHacker.js(
+    "?getHandContainer@ActorEquipment@@YAAEAVSimpleContainer@@AEAVEntityContext@@@Z",
+    SimpleContainer,
+    null,
+    EntityContext,
+);
+Actor.prototype.getArmorContainer = function () {
+    return ActorEquipment.getArmorContainer(this.ctxbase);
+};
+Actor.prototype.getHandContainer = function () {
+    return ActorEquipment.getHandContainer(this.ctxbase);
+};
 
 Actor.fromUniqueIdBin = function (bin, getRemovedActor = true) {
     return bedrockServer.level.fetchEntity(bin, getRemovedActor);
@@ -2628,7 +2653,7 @@ PlayerInventory.prototype.getItem = procHacker.js(
     int32_t,
     int32_t,
 );
-PlayerInventory.prototype.getSelectedItem = procHacker.js("?getSelectedItem@PlayerInventory@@QEAAAEBVItemStack@@XZ", ItemStack, { this: PlayerInventory });
+PlayerInventory.prototype.getSelectedItem = procHacker.js("?getSelectedItem@PlayerInventory@@QEBAAEBVItemStack@@XZ", ItemStack, { this: PlayerInventory });
 PlayerInventory.prototype.selectSlot = procHacker.js("?selectSlot@PlayerInventory@@QEAA_NHW4ContainerID@@@Z", void_t, { this: PlayerInventory }, int32_t, int32_t);
 PlayerInventory.prototype.setItem = procHacker.js(
     "?setItem@PlayerInventory@@QEAAXHAEBVItemStack@@W4ContainerID@@_N@Z",
@@ -3611,14 +3636,14 @@ StructureSettings.prototype.setIgnoreJigsawBlocks = procHacker.js(
 );
 StructureSettings.prototype.setIntegritySeed = procHacker.js("?setIntegritySeed@StructureSettings@@QEAAXI@Z", void_t, { this: StructureSettings }, float32_t);
 // StructureSettings.prototype.setIntegrityValue = procHacker.js("?setIntegrityValue@StructureSettings@@QEAAXM@Z", void_t, { this: StructureSettings }, float32_t);
-// StructureSettings.prototype.setMirror = procHacker.js("?setMirror@StructureSettings@@QEAAXW4Mirror@@@Z", void_t, { this: StructureSettings }, uint8_t);
+StructureSettings.prototype.setMirror = procHacker.js("?setMirror@StructureSettings@@QEAAXW4Mirror@@@Z", void_t, { this: StructureSettings }, uint8_t);
 // StructureSettings.prototype.setPaletteName = procHacker.js(
 //     "?setPaletteName@StructureSettings@@QEAAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
 //     void_t,
 //     { this: StructureSettings },
 //     CxxString,
 // );
-StructureSettings.prototype.setPivot = procHacker.js("?setPivot@StructureSettings@@QEAAXAEBVVec3@@@Z", void_t, { this: StructureSettings }, Vec3);
+// StructureSettings.prototype.setPivot = procHacker.js("?setPivot@StructureSettings@@QEAAXAEBVVec3@@@Z", void_t, { this: StructureSettings }, Vec3);
 StructureSettings.prototype.setReloadActorEquipment = procHacker.js(
     "?setReloadActorEquipment@StructureSettings@@QEAAX_N@Z",
     void_t,
@@ -3671,8 +3696,8 @@ StructureTemplate.prototype.placeInWorld = procHacker.js(
     BlockPos,
     StructureSettings,
 );
-StructureTemplate.prototype.getBlockAtPos = procHacker.js(
-    "?getBlockAtPos@StructureTemplate@@QEBAAEBVBlock@@AEBVBlockPos@@@Z",
+StructureTemplate.prototype.tryGetBlockAtPos = procHacker.js(
+    "?tryGetBlockAtPos@StructureTemplate@@QEBAPEBVBlock@@AEBVBlockPos@@@Z",
     Block,
     { this: StructureTemplate },
     BlockPos,

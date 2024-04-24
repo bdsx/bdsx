@@ -153,19 +153,20 @@ events.blockDestroy.setInstaller(() => {
 });
 
 events.blockDestructionStart.setInstaller(() => {
-    function onBlockDestructionStart(blockEventCoordinator: StaticPointer, player: Player, blockPos: BlockPos, v: uint8_t): void {
+    function onBlockDestructionStart(blockEventCoordinator: StaticPointer, player: Player, blockPos: BlockPos, block: Block, v: uint8_t): void {
         const event = new BlockDestructionStartEvent(player, blockPos);
         events.blockDestructionStart.fire(event);
         decay(blockPos);
-        return _onBlockDestructionStart(blockEventCoordinator, event.player, event.blockPos, v);
+        return _onBlockDestructionStart(blockEventCoordinator, event.player, event.blockPos, block, v);
     }
     const _onBlockDestructionStart = procHacker.hooking(
-        "?sendBlockDestructionStarted@BlockEventCoordinator@@QEAAXAEAVPlayer@@AEBVBlockPos@@E@Z",
+        "?sendBlockDestructionStarted@BlockEventCoordinator@@QEAAXAEAVPlayer@@AEBVBlockPos@@AEBVBlock@@E@Z",
         void_t,
         null,
         StaticPointer,
         Player,
         BlockPos,
+        Block,
         uint8_t,
     )(onBlockDestructionStart);
 });

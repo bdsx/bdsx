@@ -178,8 +178,14 @@ export class StructureTemplate extends AbstractClass {
     placeInWorld(region: BlockSource, palette: BlockPalette, pos: BlockPos, settings: StructureSettings): void {
         abstract();
     }
-    getBlockAtPos(pos: BlockPos): Block {
+    tryGetBlockAtPos(pos: BlockPos): Block | null {
         abstract();
+    }
+    /**
+     * @deprecated renamed.
+     */
+    getBlockAtPos(pos: BlockPos): Block | null {
+        return this.tryGetBlockAtPos(pos);
     }
     getSize(): BlockPos {
         abstract();

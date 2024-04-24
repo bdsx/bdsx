@@ -2153,7 +2153,9 @@ export class ItemComponentPacket extends Packet {
     entries: CxxVector<CxxPair<CxxString, CompoundTag>>;
 }
 
-@nativeClass(null)
+/**
+ * @deprecated removed.
+ */
 export class FilterTextPacket extends Packet {
     // unknown
 }
