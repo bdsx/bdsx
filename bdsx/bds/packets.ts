@@ -23,6 +23,7 @@ import {
 import { procHacker } from "../prochacker";
 import { ActorDefinitionIdentifier, ActorLink, ActorRuntimeID, ActorUniqueID } from "./actor";
 import { AttributeInstanceHandle } from "./attribute";
+import type { HudElement, HudVisibility } from "./behaviors";
 import { BlockPos, ChunkPos, Vec2, Vec3 } from "./blockpos";
 import { ConnectionRequest, JsonValue } from "./connreq";
 import { CxxOptional } from "./cxxoptional";
@@ -2417,14 +2418,26 @@ export class AgentAnimationPacket extends Packet {
 export class RefreshEntitlementsPacket extends Packet {
     // unknown
 }
+
 @nativeClass(null)
 export class PlayerToggleCrafterSlotRequestPacket extends Packet {
     // unknown
 }
+
 @nativeClass(null)
 export class SetPlayerInventoryOptionsPacket extends Packet {
     // unknown
 }
+
+@nativeClass(null)
+export class SetHudPacket extends Packet {
+    @nativeField(CxxVector.make(int32_t))
+    elements: CxxVector<HudElement>;
+    @nativeField(int32_t)
+    visibility: HudVisibility;
+}
+
+export namespace SetHudPacket {}
 export const PacketIdToType = {
     0x01: LoginPacket,
     0x02: PlayStatusPacket,
@@ -2629,6 +2642,7 @@ export const PacketIdToType = {
     0x131: RefreshEntitlementsPacket,
     0x132: PlayerToggleCrafterSlotRequestPacket,
     0x133: SetPlayerInventoryOptionsPacket,
+    0x134: SetHudPacket,
 };
 export type PacketIdToType = {
     [key in keyof typeof PacketIdToType]: InstanceType<(typeof PacketIdToType)[key]>;
