@@ -1678,7 +1678,11 @@ export class Mob extends Actor {
         abstract();
     }
 
-    isBlocking(): boolean {
+    isBlocking(): bool_t {
+        abstract();
+    }
+
+    shouldDropDeathLoot(): bool_t {
         abstract();
     }
 }
