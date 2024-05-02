@@ -205,6 +205,21 @@ export enum ActorType {
     Bogged = 144 | SkeletonMonster,
 }
 
+export enum ActorInitializationMethod {
+    /** For existing entities loaded. */
+    Loaded = 1,
+    /** For spawned entities by spawn egg, natural, or anything else. */
+    Spawned,
+    /** For child entities of other entities. e.g. cows making a cow or slimes making smaller slimes after dying. */
+    Born,
+    /** For entities which or transformed into another entity. e.g. Villager -> Witch, Piglin -> Zombie Piglin, Zombie Villager -> Villager */
+    Transformed,
+    /** For player joining, before initialized*/
+    PlayerJoined,
+    /** For entities created by an event, e.g. a Wandering trader spawning llamas. */
+    Event = 6,
+}
+
 @nativeClass({ size: 0xb0, structSymbol: true })
 export class ActorDefinitionIdentifier extends NativeClass {
     @nativeField(CxxString)

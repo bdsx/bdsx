@@ -1,4 +1,4 @@
-import { Actor, ActorDamageCause, ActorDamageSource, DimensionId, Mob } from "../bds/actor";
+import { Actor, ActorDamageCause, ActorDamageSource, type ActorInitializationMethod, DimensionId, Mob } from "../bds/actor";
 import { BlockPos, Vec3 } from "../bds/blockpos";
 import { HitResult, ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ComplexInventoryTransaction, ContainerId, HandSlot, InventorySource, InventorySourceType, ItemStack, ItemStackBase } from "../bds/inventory";
@@ -46,7 +46,7 @@ export class EntitySneakEvent {
 }
 
 export class EntityCreatedEvent {
-    constructor(public entity: Actor) {}
+    constructor(public entity: Actor, public method: ActorInitializationMethod) {}
 }
 
 export class PlayerAttackEvent {
@@ -363,12 +363,10 @@ events.entitySneak.setInstaller(() => {
     });
 });
 
-enum ActorInitializationMethod {}
-
 events.entityCreated.setInstaller(() => {
     // stub code, need to implement and reposition.
     function onEntityCreated(actorEventCoordinator: VoidPointer, entity: Actor, method: ActorInitializationMethod): void {
-        const event = new EntityCreatedEvent(entity);
+        const event = new EntityCreatedEvent(entity, method);
         _onEntityCreated(actorEventCoordinator, event.entity, method);
         events.entityCreated.fire(event);
     }
