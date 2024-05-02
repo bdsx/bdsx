@@ -46,7 +46,7 @@ export class EntitySneakEvent {
 }
 
 export class EntityCreatedEvent {
-    constructor(public entity: Actor) {}
+    constructor(public entity: Actor, public method: ActorInitializationMethod) {}
 }
 
 export class PlayerAttackEvent {
@@ -363,12 +363,23 @@ events.entitySneak.setInstaller(() => {
     });
 });
 
-enum ActorInitializationMethod {}
+export enum ActorInitializationMethod {
+    /** Case when an entity is loaded into the world. */
+    Loaded = 1,
+    /** Case when an entity is naturally spawned in the world. */
+    Spawned,
+    /** Case when an entity is created as child of other entity or entities, e.g., cows making a cow or slimes making smaller slimes after dying. */
+    Born,
+    /** Case when an entity is transformed into another entity. */
+    Transformed,
+    /** Case when an entity is created by an event, e.g., a Wandering trader spawning llamas. */
+    Event = 6
+}
 
 events.entityCreated.setInstaller(() => {
     // stub code, need to implement and reposition.
     function onEntityCreated(actorEventCoordinator: VoidPointer, entity: Actor, method: ActorInitializationMethod): void {
-        const event = new EntityCreatedEvent(entity);
+        const event = new EntityCreatedEvent(entity, method);
         _onEntityCreated(actorEventCoordinator, event.entity, method);
         events.entityCreated.fire(event);
     }
