@@ -1,4 +1,4 @@
-import { Actor, ActorDamageCause, ActorDamageSource, DimensionId, Mob } from "../bds/actor";
+import { Actor, ActorDamageCause, ActorDamageSource, type ActorInitializationMethod, DimensionId, Mob } from "../bds/actor";
 import { BlockPos, Vec3 } from "../bds/blockpos";
 import { HitResult, ProjectileComponent, SplashPotionEffectSubcomponent } from "../bds/components";
 import { ComplexInventoryTransaction, ContainerId, HandSlot, InventorySource, InventorySourceType, ItemStack, ItemStackBase } from "../bds/inventory";
@@ -362,19 +362,6 @@ events.entitySneak.setInstaller(() => {
         }
     });
 });
-
-export enum ActorInitializationMethod {
-    /** Case when an entity is loaded into the world. */
-    Loaded = 1,
-    /** Case when an entity is naturally spawned in the world. */
-    Spawned,
-    /** Case when an entity is created as child of other entity or entities, e.g., cows making a cow or slimes making smaller slimes after dying. */
-    Born,
-    /** Case when an entity is transformed into another entity. */
-    Transformed,
-    /** Case when an entity is created by an event, e.g., a Wandering trader spawning llamas. */
-    Event = 6
-}
 
 events.entityCreated.setInstaller(() => {
     // stub code, need to implement and reposition.
