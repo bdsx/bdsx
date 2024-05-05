@@ -87,7 +87,7 @@ function onPacketBefore(rbp: OnPacketRBP, returnAddressInStack: StaticPointer, p
         const target = events.packetBefore(packetId);
         if (target === null || target.isEmpty()) throw Error("no listener but onPacketBefore fired.");
 
-        const ni = nethook.lastSender || asmcode.addressof_lastSenderNetId.getPointerAs(NetworkIdentifier);
+        const ni = nethook.lastSender || asmcode.lastSenderNetId.as(NetworkConnection).networkIdentifier;
         const TypedPacket = PacketIdToType[packetId] || Packet;
         const packet = rbp.packet.p!;
         const typedPacket = packet.as(TypedPacket);
