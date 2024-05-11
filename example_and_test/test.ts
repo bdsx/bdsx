@@ -996,7 +996,7 @@ Tester.concurrency(
                 );
                 events.packetSendRaw(i).on(
                     this.wrap((ptr, size, ni, packetId) => {
-                        this.assert(ni.getActor()?.getNetworkIdentifier().equalsptr(ni) || false, "Wrong NetworkIdentifier on packetSendRaw");
+                        this.assert(checkNetworkId(ni), "Wrong NetworkIdentifier on packetSendRaw");
 
                         const recentSent = getRecentSentPacketId();
                         if (recentSent !== null) {
