@@ -255,5 +255,7 @@ export enum MinecraftPacketIds { // int32_t
     PlayerToggleCrafterSlotRequest = 0x132,
     SetPlayerInventoryOptions = 0x133,
     SetHud = 0x134,
+
+    // EndId = 0x135
 }
 (MinecraftPacketIds as any).__proto__ = null;

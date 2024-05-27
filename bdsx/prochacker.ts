@@ -396,6 +396,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
     }
 
     /**
+     * Patches with native code
      * @param subject for printing on error
      * @param key target symbol name
      * @param offset offset from target
@@ -426,6 +427,7 @@ export class ProcHacker<T extends Record<string, NativePointer>> {
     }
 
     /**
+     * Inserts `jmp` code.
      * @param subject for printing on error
      * @param key target symbol name
      * @param offset offset from target

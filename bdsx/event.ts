@@ -66,7 +66,7 @@ import { remapAndPrintError, remapError } from "./source-map-support";
 const PACKET_EVENT_COUNT = PACKET_ID_COUNT * 5;
 
 const enabledPacket = asmcode.addressof_enabledPacket;
-enabledPacket.fill(0, 256);
+enabledPacket.fill(0, PACKET_ID_COUNT);
 
 class PacketEvent extends Event<(...args: any[]) => void | CANCEL> {
     constructor(public readonly id: number) {

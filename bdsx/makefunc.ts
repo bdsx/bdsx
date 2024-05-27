@@ -312,6 +312,7 @@ export namespace makefunc {
     }
 
     /**
+     * np: native patch
      * make the JS function as a native function.
      *
      * wrapper codes are not deleted permanently.
@@ -426,7 +427,7 @@ export namespace makefunc {
      * @param params *_t or *Pointer
      */
     export function js<
-        PTR extends VoidPointer | readonly [number, number?],
+        PTR extends VoidPointer | readonly [number, number?], // address of the function | [offset in vftable, offset of vftable]
         OPTS extends MakeFuncOptions<any> | null,
         RETURN extends ParamType,
         PARAMS extends ParamType[],

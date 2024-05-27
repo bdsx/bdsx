@@ -9,7 +9,7 @@ import { destackThrow } from "../source-map-support";
 import { TextParser } from "../textparser";
 import { timeout } from "../util";
 
-type PROC_T = { readonly vftable: { readonly [key: string]: [number, number?] } }; // [offsets in vftable, offset of vftable]
+type PROC_T = { readonly vftable: { readonly [key: string]: [number, number?] } }; // [offset in vftable, offset of vftable]
 
 /**
  * @remark Backward compatibility cannot be guaranteed. The symbol name can be changed by BDS updating.
