@@ -569,6 +569,19 @@ export const EntityContextBase = EntityContext;
 /** @deprecated merged into EntityContext */
 export type EntityContextBase = EntityContext;
 
+interface PlayAnimationOptions {
+    /** Specifies the state to transition to. */
+    nextState?: string;
+    /** Amount of time to fade out after an animation stops. */
+    blendOutTime?: number;
+    /** Specifies a Molang expression for when this animation should complete. */
+    stopExpression?: string;
+    /** Specifies a controller to use that has been defined on the entity. */
+    controller?: string;
+    /** A list of players the animation will be visible to. */
+    players?: Player[];
+}
+
 export class Actor extends AbstractClass {
     vftable: VoidPointer;
     ctxbase: EntityContext;
@@ -1553,6 +1566,10 @@ export class Actor extends AbstractClass {
      * @param target put null to unset the target.
      */
     setTarget(target: Actor | null): void {
+        abstract();
+    }
+
+    playAnimation(animation: string, options?: PlayAnimationOptions): void {
         abstract();
     }
 

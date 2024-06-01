@@ -172,6 +172,7 @@ import {
 import { NetworkConnection, NetworkIdentifier, NetworkSystem, ServerNetworkHandler } from "./networkidentifier";
 import { Packet } from "./packet";
 import {
+    AnimateEntityPacket,
     AttributeData,
     BlockActorDataPacket,
     GameRulesChangedPacket,
@@ -1120,6 +1121,21 @@ Actor.prototype.setOwner = procHacker.js("?setOwner@Actor@@UEAAXUActorUniqueID@@
 Actor.prototype.getVariant = procHacker.js("?getVariant@Actor@@QEBAHXZ", int32_t, { this: Actor });
 Actor.prototype.setVariant = procHacker.js("?setVariant@Actor@@QEAAXH@Z", void_t, { this: Actor }, int32_t);
 Actor.prototype.setTarget = procHacker.jsv("??_7Actor@@6B@", "?setTarget@Actor@@UEAAXPEAV1@@Z", void_t, { this: Actor }, Actor);
+Actor.prototype.playAnimation = function (animation, options = {}) {
+    const pk = AnimateEntityPacket.allocate();
+    pk.mAnimation = animation;
+    pk.mNextState = options.nextState ?? "default";
+    pk.mBlendOutTime = options.blendOutTime ?? 0;
+    pk.mStopExpression = options.stopExpression ?? "query.any_animation_finished";
+    pk.mStopExpressionVersion = 1;
+    pk.mController = options.controller ?? "__runtime_controller";
+    pk.mRuntimeIds.push(this.getRuntimeID());
+    const players = options.players ?? bedrockServer.serverInstance.getPlayers();
+    for (const player of players) {
+        player.sendNetworkPacket(pk);
+    }
+    pk.dispose();
+};
 
 const getProjectileComponent = procHacker.js("??$tryGetComponent@VProjectileComponent@@@Actor@@QEAAPEAVProjectileComponent@@XZ", ProjectileComponent, null, Actor);
 const getPhysicsComponent = procHacker.js("??$tryGetComponent@VPhysicsComponent@@@Actor@@QEAAPEAVPhysicsComponent@@XZ", PhysicsComponent, null, Actor);
