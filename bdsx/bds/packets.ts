@@ -2111,9 +2111,24 @@ export class MotionPredictionHintsPacket extends Packet {
     // unknown
 }
 
+/** https://mojang.github.io/bedrock-protocol-docs/html/AnimateEntityPacket.html */
 @nativeClass(null)
 export class AnimateEntityPacket extends Packet {
-    // unknown
+    @nativeField(CxxVector.make(ActorRuntimeID))
+    runtimeIds: CxxVector<ActorRuntimeID>;
+    @nativeField(CxxString)
+    animation: CxxString;
+    @nativeField(CxxString)
+    nextState: CxxString;
+    @nativeField(CxxString)
+    stopExpression: CxxString;
+    /** Molang version */
+    @nativeField(int32_t)
+    stopExpressionVersion: int32_t;
+    @nativeField(CxxString)
+    controller: CxxString;
+    @nativeField(float32_t)
+    blendOutTime: float32_t;
 }
 
 @nativeClass(null)
