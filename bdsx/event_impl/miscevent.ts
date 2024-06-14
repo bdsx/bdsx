@@ -1,4 +1,4 @@
-import { Objective, ObjectiveCriteria, PlayerScoreSetFunction, Scoreboard, ScoreboardIdentityRef } from "../bds/scoreboard";
+import { Objective, ObjectiveCriteria, PlayerScoreSetFunction, Scoreboard, ScoreboardId, ScoreboardIdentityRef } from "../bds/scoreboard";
 import { CANCEL } from "../common";
 import { StaticPointer, VoidPointer } from "../core";
 import { decay } from "../decay";
@@ -60,23 +60,24 @@ export class ScoreResetEvent {
 
 events.scoreReset.setInstaller(() => {
     const _onScoreReset = procHacker.hooking(
-        "?removeFromObjective@ScoreboardIdentityRef@@QEAA_NAEAVScoreboard@@AEAVObjective@@@Z",
+        "?resetPlayerScore@Scoreboard@@QEAA_NAEBUScoreboardId@@AEAVObjective@@@Z",
         bool_t,
         null,
-        ScoreboardIdentityRef,
         Scoreboard,
+        ScoreboardId,
         Objective,
     )(onScoreReset);
-    function onScoreReset(identityRef: ScoreboardIdentityRef, scoreboard: Scoreboard, objective: Objective): boolean {
-        const event = new ScoreResetEvent(identityRef, objective);
+    function onScoreReset(scoreboard: Scoreboard, scoreboardId: ScoreboardId, objective: Objective): boolean {
+        const idRef = scoreboard.getScoreboardIdentityRef(scoreboardId)!;
+        const event = new ScoreResetEvent(idRef, objective);
         const canceled = events.scoreReset.fire(event) === CANCEL;
-        decay(identityRef);
-        decay(scoreboard);
+        decay(idRef);
+        decay(objective);
         if (canceled) {
-            scoreboard.sync(identityRef.scoreboardId, objective);
+            scoreboard.sync(idRef.scoreboardId, objective);
             return false;
         }
-        return _onScoreReset(event.identityRef, scoreboard, event.objective);
+        return _onScoreReset(scoreboard, scoreboardId, event.objective);
     }
 });
 

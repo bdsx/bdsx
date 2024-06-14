@@ -852,6 +852,7 @@ Tester.concurrency(
 
         async checkPacketNames() {
             const deletePackets = new Set([
+                MinecraftPacketIds.TickSync,
                 MinecraftPacketIds.AdventureSettings,
                 MinecraftPacketIds.CraftingEvent,
                 MinecraftPacketIds.ItemFrameDropItem,

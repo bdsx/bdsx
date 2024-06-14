@@ -10,7 +10,7 @@ import { events } from "./event";
 import { bedrockServer } from "./launcher";
 import { makefunc } from "./makefunc";
 import { NativeClass, nativeClass, nativeField } from "./nativeclass";
-import { bin64_t, bool_t, CxxString, int32_t, int64_as_float_t, NativeType, Type } from "./nativetype";
+import { CxxString, NativeType, Type, bin64_t, bool_t, int32_t, int64_as_float_t } from "./nativetype";
 import { getEnumKeys } from "./util";
 
 const enumResults = new Set<string>();

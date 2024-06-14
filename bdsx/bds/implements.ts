@@ -61,7 +61,7 @@ import { AttributeId, AttributeInstance, BaseAttributeMap } from "./attribute";
 import { Bedrock } from "./bedrock";
 import { Biome } from "./biome";
 import { Block, BlockActor, BlockLegacy, BlockSource, BlockUtils, ChestBlockActor, PistonBlockActor } from "./block";
-import { BlockPos, ChunkPos, RelativeFloat, Vec2, Vec3 } from "./blockpos";
+import { BlockPos, ChunkBlockPos, ChunkPos, RelativeFloat, Vec2, Vec3 } from "./blockpos";
 import { ChunkSource, LevelChunk } from "./chunk";
 import { CommandSymbols } from "./cmdsymbolloader";
 import * as command from "./command";
@@ -70,6 +70,7 @@ import {
     CommandContext,
     CommandOutput,
     CommandOutputParameter,
+    CommandOutputSender,
     CommandOutputType,
     CommandPermissionLevel,
     CommandPositionFloat,
@@ -177,9 +178,7 @@ import {
     BlockActorDataPacket,
     GameRulesChangedPacket,
     ItemStackRequestAction,
-    ItemStackRequestBatch,
     ItemStackRequestData,
-    ItemStackRequestPacket,
     PlayerAuthInputPacket,
     PlayerListEntry,
     PlayerListPacket,
@@ -1559,7 +1558,7 @@ ActorDamageByChildActorSource.constructWith = function (
 };
 
 ItemActor.abstract({
-    itemStack: [ItemStack, 0x470], // accessed in ItemActor::isFireImmune
+    itemStack: [ItemStack, 0x448], // accessed in ItemActor::isFireImmune
 });
 
 ServerPlayer.prototype.setAttribute = function (id: AttributeId, value: number): AttributeInstance | null {
@@ -1608,9 +1607,9 @@ procHacker.hookingRawWithCallOriginal("??1Actor@@UEAA@XZ", asmcode.actorDestruct
 
 // player.ts
 Player.abstract({
-    enderChestContainer: [EnderChestContainer.ref(), 0xc88], // accessed in Player::Player+1231 (the line between two if-else statements, the first if statement calls EnderChestContainer::EnderChestContainer)
-    playerUIContainer: [PlayerUIContainer, 0xd40], // accessed in Player::readAdditionalSaveData+1263 when calling PlayerUIContainer::load
-    deviceId: [CxxString, 0x1d68], // accessed in AddPlayerPacket::AddPlayerPacket(const Player &)+187 (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
+    enderChestContainer: [EnderChestContainer.ref(), 0xc60], // accessed in Player::Player+1231 (the line between two if-else statements, the first if statement calls EnderChestContainer::EnderChestContainer)
+    playerUIContainer: [PlayerUIContainer, 0xd18], // accessed in Player::readAdditionalSaveData+1263 when calling PlayerUIContainer::load
+    deviceId: [CxxString, 0x1d80], // accessed in AddPlayerPacket::AddPlayerPacket(const Player &)+187 (the string assignment between LayeredAbilities::LayeredAbilities and Player::getPlatform)
 });
 (Player.prototype as any)._setName = procHacker.js(
     "?setName@Player@@QEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
@@ -1842,14 +1841,21 @@ const SimulatedPlayer$simulateLookAtBlock = procHacker.js(
     BlockPos,
     uint8_t,
 );
-const SimulatedPlayer$simulateLookAtLocation = procHacker.js("?simulateLookAt@SimulatedPlayer@@QEAAXAEBVVec3@@@Z", void_t, null, SimulatedPlayer, Vec3);
+const SimulatedPlayer$simulateLookAtLocation = procHacker.js(
+    "?simulateLookAt@SimulatedPlayer@@QEAAXAEBVVec3@@W4LookDuration@sim@@@Z",
+    void_t,
+    null,
+    SimulatedPlayer,
+    Vec3,
+    uint8_t,
+);
 SimulatedPlayer.prototype.simulateLookAt = function (target: BlockPos | Actor | Vec3, duration: uint8_t = 0) {
     if (target instanceof Actor) {
         SimulatedPlayer$simulateLookAtEntity(this, target, duration);
     } else if (target instanceof BlockPos) {
         SimulatedPlayer$simulateLookAtBlock(this, target, duration);
     } else {
-        SimulatedPlayer$simulateLookAtLocation(this, target);
+        SimulatedPlayer$simulateLookAtLocation(this, target, duration);
     }
 };
 SimulatedPlayer.tryGetFromEntity = procHacker.js("?tryGetFromEntity@SimulatedPlayer@@SAPEAV1@AEAVEntityContext@@_N@Z", SimulatedPlayer, null, EntityContext, bool_t);
@@ -1980,11 +1986,11 @@ PlayerListEntry.constructWith = function (player: Player): PlayerListEntry {
 };
 PlayerListEntry.prototype[NativeType.dtor] = procHacker.js("??1PlayerListEntry@@QEAA@XZ", void_t, { this: PlayerListEntry });
 
-ItemStackRequestPacket.prototype.getRequestBatch = procHacker.js(
+/* ItemStackRequestPacket.prototype.getRequestBatch = procHacker.js(
     "?getRequestBatch@ItemStackRequestPacket@@QEBAAEBVItemStackRequestBatch@@XZ",
     ItemStackRequestBatch,
     { this: ItemStackRequestPacket },
-);
+); */
 
 // networkidentifier.ts
 NetworkIdentifier.prototype.getActor = function (): ServerPlayer | null {
@@ -2398,9 +2404,9 @@ Item.prototype.getCreativeCategory = procHacker.js("?getCreativeCategory@Item@@Q
 
 ItemStackBase.prototype[NativeType.dtor] = vectorDeletingDestructor;
 
-Item.prototype.isArmor = procHacker.jsv("??_7ArmorItem@@6B@", "?isArmor@ArmorItem@@UEBA_NXZ", bool_t, { this: Item });
-Item.prototype.getArmorValue = procHacker.jsv("??_7ArmorItem@@6B@", "?getArmorValue@ArmorItem@@UEBAHXZ", int32_t, { this: Item });
-Item.prototype.getToughnessValue = procHacker.jsv("??_7ArmorItem@@6B@", "?getToughnessValue@ArmorItem@@UEBAHXZ", int32_t, { this: Item });
+Item.prototype.isArmor = procHacker.jsv("??_7HumanoidArmorItem@@6B@", "?isHumanoidArmor@HumanoidArmorItem@@UEBA_NXZ", bool_t, { this: Item });
+Item.prototype.getArmorValue = procHacker.jsv("??_7HumanoidArmorItem@@6B@", "?getArmorValue@HumanoidArmorItem@@UEBAHXZ", int32_t, { this: Item });
+Item.prototype.getToughnessValue = procHacker.jsv("??_7HumanoidArmorItem@@6B@", "?getToughnessValue@HumanoidArmorItem@@UEBAHXZ", int32_t, { this: Item });
 Item.prototype.getCooldownType = procHacker.jsv("??_7Item@@6B@", "?getCooldownType@Item@@UEBAAEBVHashedString@@XZ", HashedString, { this: Item });
 Item.prototype.canDestroyInCreative = procHacker.jsv("??_7ComponentItem@@6B@", "?canDestroyInCreative@ComponentItem@@UEBA_NXZ", bool_t, { this: Item });
 
@@ -2485,8 +2491,10 @@ ItemStackBase.prototype.isArmorItem = procHacker.js("?isArmorItem@ItemStackBase@
 ItemStackBase.prototype.getComponentItem = procHacker.js("?getComponentItem@ItemStackBase@@QEBAPEBVComponentItem@@XZ", ComponentItem, { this: ItemStackBase });
 ItemStackBase.prototype.getMaxDamage = procHacker.js("?getMaxDamage@ItemStackBase@@QEBAFXZ", int32_t, { this: ItemStackBase });
 ItemStackBase.prototype.getDamageValue = procHacker.js("?getDamageValue@ItemStackBase@@QEBAFXZ", int16_t, { this: ItemStackBase });
-ItemStackBase.prototype.isWearableItem = procHacker.js("?isWearableItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.getAttackDamage = procHacker.js("?getAttackDamage@ItemStackBase@@QEBAHXZ", int32_t, { this: ItemStackBase });
+ItemStackBase.prototype.isHumanoidWearableItem = procHacker.js("?isHumanoidWearableItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
+ItemStackBase.prototype.isHumanoidWearableBlockItem = procHacker.js("?isHumanoidWearableBlockItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
+ItemStackBase.prototype.isHumanoidWearableArmorItem = procHacker.js("?isHumanoidArmorItem@ItemStackBase@@QEBA_NXZ", bool_t, { this: ItemStackBase });
 ItemStackBase.prototype.allocateAndSave = procHacker.js(
     "?save@ItemStackBase@@QEBA?AV?$unique_ptr@VCompoundTag@@U?$default_delete@VCompoundTag@@@std@@@std@@XZ",
     CompoundTag.ref(),
@@ -3009,7 +3017,7 @@ BlockActor.prototype.getCustomName = procHacker.js("?getCustomName@BlockActor@@U
 });
 
 ChestBlockActor.prototype.isLargeChest = procHacker.js("?isLargeChest@ChestBlockActor@@QEBA_NXZ", bool_t, { this: ChestBlockActor });
-ChestBlockActor.prototype.openBy = procHacker.js("?openBy@ChestBlockActor@@QEAAXAEAVPlayer@@@Z", void_t, { this: ChestBlockActor }, Player);
+ChestBlockActor.prototype.openBy = procHacker.js("?openBy@ChestBlockActor@@UEAAXAEAVPlayer@@@Z", void_t, { this: ChestBlockActor }, Player);
 ChestBlockActor.prototype.getPairedChestPosition = procHacker.js("?getPairedChestPosition@ChestBlockActor@@QEAAAEBVBlockPos@@XZ", BlockPos, {
     this: ChestBlockActor,
 });
@@ -3754,7 +3762,7 @@ OnHitSubcomponent.prototype.writetoJSON = procHacker.jsv(
 HitResult.prototype.getEntity = procHacker.js("?getEntity@HitResult@@QEBAPEAVActor@@XZ", Actor, { this: HitResult });
 
 // chunk.ts
-LevelChunk.prototype.getBiome = procHacker.js("?getBiome@LevelChunk@@QEBAAEAVBiome@@AEBVChunkBlockPos@@@Z", Biome, { this: LevelChunk });
+LevelChunk.prototype.getBiome = procHacker.js("?getBiome@LevelChunk@@QEBAAEBVBiome@@AEBVChunkBlockPos@@@Z", Biome, { this: LevelChunk }, ChunkBlockPos);
 LevelChunk.prototype.getLevel = procHacker.js("?getLevel@LevelChunk@@QEBAAEAVLevel@@XZ", Level, { this: LevelChunk });
 LevelChunk.prototype.getPosition = procHacker.js("?getPosition@LevelChunk@@QEBAAEBVChunkPos@@XZ", ChunkPos, { this: LevelChunk });
 LevelChunk.prototype.getMin = procHacker.js("?getMin@LevelChunk@@QEBAAEBVBlockPos@@XZ", BlockPos, { this: LevelChunk });
@@ -4069,14 +4077,26 @@ function executeCommandWithOutput(command: string, origin: CommandOrigin, mute: 
             res.result = 0; // MCRESULT_FailedToParseCommand;
         }
 
-        output.set_int("statusCode", res.getFullCode());
+        const statusCode = res.getFullCode();
+        output.set_int("statusCode", statusCode);
+
         if ((mute & CommandResultType.Output) !== 0 && !output.empty()) {
             commands.handleOutput(origin, output);
         }
         if ((mute & CommandResultType.Data) !== 0) {
-            const json = bedrockServer.commandOutputSender._toJson(output);
-            res.data = json.value();
-            json.destruct();
+            const len = output.messages.size();
+            let statusMessage = "";
+            if (len > 0) {
+                const first = output.messages.get(0);
+                statusMessage = translateText(first.messageId, first.params);
+                for (let i = 1; i < len; i++) {
+                    const msg = output.messages.get(i);
+                    const translated = translateText(msg.messageId, msg.params);
+                    statusMessage += "\n";
+                    statusMessage += translated;
+                }
+            }
+            res.data = Object.assign({ statusCode, statusMessage }, output.propertyBag.json.value());
         }
         return res;
     } finally {
@@ -4084,3 +4104,59 @@ function executeCommandWithOutput(command: string, origin: CommandOrigin, mute: 
         cmdparser.destruct();
     }
 }
+
+/**
+ * internal class
+ */
+@nativeClass(0x30) // allocated in CommandUtils::displayLocalizableMessage
+class TextObjectLocalizedTextWithParams extends NativeClass {
+    asString(): CxxStringWrapper {
+        abstract();
+    }
+    static _constructWith(messageId: string, params: CxxVector<CxxString>): TextObjectLocalizedTextWithParams {
+        abstract();
+    }
+}
+TextObjectLocalizedTextWithParams.prototype.asString = procHacker.js(
+    "?asString@TextObjectLocalizedTextWithParams@@UEBA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+    CxxStringWrapper,
+    { this: TextObjectLocalizedTextWithParams, structureReturn: true },
+);
+TextObjectLocalizedTextWithParams._constructWith = function (messageId: string, params: CxxVector<CxxString>) {
+    const object = new TextObjectLocalizedTextWithParams(true);
+    TextObjectLocalizedTextWithParams$Ctor(object, messageId, params);
+    return object;
+};
+const TextObjectLocalizedTextWithParams$Ctor = procHacker.js(
+    "??0TextObjectLocalizedTextWithParams@@QEAA@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@2@@Z",
+    TextObjectLocalizedTextWithParams,
+    null,
+    TextObjectLocalizedTextWithParams,
+    CxxString,
+    CxxVector$string,
+);
+const translateText = (rawtext: string, params: CxxVector<CxxString>): string => {
+    const textObject = TextObjectLocalizedTextWithParams._constructWith(rawtext, params);
+    const str = textObject.asString();
+    const translated = str.value;
+    str.destruct();
+    textObject.destruct();
+    return translated;
+};
+
+CommandOutputSender.prototype._toJson = function (output) {
+    const len = output.messages.size();
+    let statusMessage = "";
+    if (len > 0) {
+        const first = output.messages.get(0);
+        statusMessage = translateText(first.messageId, first.params);
+        for (let i = 1; i < len; i++) {
+            const msg = output.messages.get(i);
+            const translated = translateText(msg.messageId, msg.params);
+            statusMessage += "\n";
+            statusMessage += translated;
+        }
+    }
+    const value = Object.assign({ statusCode: output.getSuccessCount() > 0 ? 0 : -1 }, output.propertyBag.json.value());
+    return JsonValue.constructWith(value);
+};

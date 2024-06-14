@@ -28,6 +28,7 @@ export enum MinecraftPacketIds { // int32_t
     PassengerJump = 0x14,
     UpdateBlock = 0x15,
     AddPainting = 0x16,
+    /** @deprecated removed */
     TickSync = 0x17,
     /** @deprecated removed */
     LevelSoundEventV1 = 0x18,

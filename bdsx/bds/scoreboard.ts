@@ -148,7 +148,7 @@ export class ObjectiveCriteria extends AbstractClass {
 
 @nativeClass(null)
 export class Objective extends AbstractClass {
-    @nativeField(CxxString, 0x40) // accessed in Objective::getName()
+    @nativeField(CxxString, 0x58) // accessed in Objective::getName()
     name: CxxString;
     @nativeField(CxxString)
     displayName: CxxString;

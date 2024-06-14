@@ -511,10 +511,10 @@ export def enabledPacket:byte[PACKET_ID_COUNT]
 export def lastSenderNetId:qword
 
 export proc packetRawHook
-    ; dword ptr[rbp+0x1A0] - packetId
+    ; dword ptr[rbp+0x1C0] - packetId
     mov lastSenderNetId, r14 ; NetworkConnection
 
-    mov edx, dword ptr[rbp+0x1A0]
+    mov edx, dword ptr[rbp+0x1C0]
     lea rax, enabledPacket
     mov al, byte ptr[rax+rdx]
     unwind
@@ -525,21 +525,21 @@ export proc packetRawHook
     jmp onPacketRaw
  _skipEvent:
     ; rdx - packetId
-    lea rcx, [rbp+0x1A8] ; packet
+    lea rcx, [rbp+0x1C8] ; packet
     jmp createPacketRaw
 endp
 
 export def packetBeforeOriginal:qword
 export def onPacketBefore:qword
 export proc packetBeforeHook
-    ; dword ptr[rbp+0x1A0] - packetId
+    ; dword ptr[rbp+0x1C0] - packetId
     stack 28h
-    lea rdx,qword ptr[rbp+0x2C0] ; original code
-    lea rcx,qword ptr[rbp+0x48] ; original code
+    lea rdx,qword ptr[rbp+0x80] ; original code
+    lea rcx,qword ptr[rbp+0x30] ; original code
     call packetBeforeOriginal ; original code
     unwind
     lea rcx, enabledPacket
-    mov r8d, dword ptr[rbp+0x1A0] ; packetId
+    mov r8d, dword ptr[rbp+0x1C0] ; packetId
     movzx ecx, byte ptr[rcx+r8]
     test cl, 0x02
     jz _skipEvent
@@ -557,7 +557,7 @@ export def handlePacket:qword
 export def __guard_dispatch_icall_fptr:qword
 
 export proc packetAfterHook
-    ; dword ptr[rbp+0x1A0] - packetId
+    ; dword ptr[rbp+0x1C0] - packetId
     stack 28h
 
     ; orignal codes
@@ -567,12 +567,12 @@ export proc packetAfterHook
     call __guard_dispatch_icall_fptr ; ServerNetworkHandler::handle()
 
     lea r10, enabledPacket
-    mov r8d, dword ptr[rbp+0x1A0] ; packetId
+    mov r8d, dword ptr[rbp+0x1C0] ; packetId
     movzx eax, byte ptr[r10+r8]
     unwind
     test al, 0x04
     jz _skipEvent
-    mov rcx,[rbp+0x1A8] ; packet
+    mov rcx,[rbp+0x1C8] ; packet
     mov rdx, r14 ; ni
     ; r8 - packetId
     jmp onPacketAfter

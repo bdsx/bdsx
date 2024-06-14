@@ -679,7 +679,48 @@ export enum CommandOutputType {
     DataSet = 4,
 }
 
+enum CommandOutputMessageType {
+    Success,
+    Error,
+}
+
 type CommandOutputParameterType = string | boolean | number | Actor | BlockPos | Vec3 | Actor[];
+
+@nativeClass() // 0x40: calculated in CommandOutput::addMessage
+class CommandOutputMessage extends NativeClass {
+    @nativeField(int32_t)
+    type: CommandOutputMessageType;
+    @nativeField(CxxString)
+    messageId: CxxString;
+    @nativeField(CxxVector.make(CxxString))
+    params: CxxVector<CxxString>;
+
+    getMessageId(): CxxString {
+        abstract();
+    }
+
+    getType(): CommandOutputMessageType {
+        abstract();
+    }
+
+    getParams(): CxxString[] {
+        abstract();
+    }
+}
+
+CommandOutputMessage.prototype.getType = procHacker.js("?getType@CommandOutputMessage@@QEBA?AW4CommandOutputMessageType@@XZ", int32_t, {
+    this: CommandOutputMessage,
+});
+CommandOutputMessage.prototype.getMessageId = procHacker.js(
+    "?getMessageId@CommandOutputMessage@@QEBAAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ",
+    CxxString,
+    { this: CommandOutputMessage },
+);
+CommandOutputMessage.prototype.getParams = procHacker.js(
+    "?getParams@CommandOutputMessage@@QEBAAEBV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ",
+    CxxVectorToArray.make(CxxString),
+    { this: CommandOutputMessage },
+);
 
 @nativeClass()
 export class CommandOutputParameter extends NativeClass {
@@ -780,9 +821,11 @@ export class CommandOutput extends NativeClass {
     type: CommandOutputType;
     @nativeField(CommandPropertyBag.ref())
     propertyBag: CommandPropertyBag;
+    @nativeField(CxxVector.make(CommandOutputMessage))
+    messages: CxxVector<CommandOutputMessage>;
+
     // @nativeField(int32_t, 0x28)
     // successCount:int32_t;
-
     getSuccessCount(): number {
         abstract();
     }
@@ -887,16 +930,16 @@ export class CommandOutput extends NativeClass {
         this._error(message, _params);
         _params.destruct();
     }
-    protected _addMessage(message: string, params: CxxVector<CommandOutputParameter>): void {
+    protected _addMessage(message: string, params: CxxVector<CommandOutputParameter>, type: CommandOutputMessageType): void {
         abstract();
     }
 
     /**
      * @param params CAUTION! it will destruct the parameters.
      */
-    addMessage(message: string, params: CommandOutputParameterType[] | CommandOutputParameter[] = []): void {
+    addMessage(message: string, params: CommandOutputParameterType[] | CommandOutputParameter[] = [], type = CommandOutputMessageType.Success): void {
         const _params = paramsToVector(params);
-        this._addMessage(message, _params);
+        this._addMessage(message, _params, type);
         _params.destruct();
     }
     static constructWith(type: CommandOutputType): CommandOutput {
@@ -1502,15 +1545,13 @@ CommandOutput.prototype.set_Vec3 = function (k, v) {
     { this: CommandOutput },
     CxxString,
     CommandOutputParameterVector,
+    int32_t,
 );
 CommandOutput.prototype[NativeType.dtor] = procHacker.js("??1CommandOutput@@QEAA@XZ", void_t, { this: CommandOutput });
 
-CommandOutputSender.prototype._toJson = procHacker.js(
-    "?_toJson@CommandOutputSender@@IEBA?AVValue@Json@@AEBVCommandOutput@@@Z",
-    JsonValue,
-    { this: CommandOutputSender, structureReturn: true },
-    CommandOutput,
-);
+CommandOutputSender.prototype._toJson = function () {
+    return JsonValue.constructWith({ error: "REMOVED FUNCTION" });
+};
 CommandOutputSender.prototype.sendToAdmins = procHacker.js(
     "?sendToAdmins@CommandOutputSender@@QEAAXAEBVCommandOrigin@@AEBVCommandOutput@@W4CommandPermissionLevel@@@Z",
     void_t,
@@ -1531,14 +1572,14 @@ MinecraftCommands.prototype.handleOutput = procHacker.js(
 MinecraftCommands.getOutputType = procHacker.js("?getOutputType@MinecraftCommands@@SA?AW4CommandOutputType@@AEBVCommandOrigin@@@Z", int32_t, null, CommandOrigin);
 
 CommandRegistry.abstract({
-    enumValues: [CxxVector.make(CxxString), 192],
-    enums: [CxxVector.make(CommandRegistry.Enum), 0xd8], // accessed in CommandRegistry::addEnumValuesToExisting
-    enumLookup: [CxxMap.make(CxxString, uint32_t), 0x150], // assumed, enumValueLookup-0x10
-    enumValueLookup: [CxxMap.make(CxxString, uint64_as_float_t), 0x160], // accessed in CommandRegistry::findEnumValue
+    enumValues: [CxxVector.make(CxxString), 0xc8],
+    enums: [CxxVector.make(CommandRegistry.Enum), 0xe0], // accessed in CommandRegistry::addEnumValuesToExisting
+    enumLookup: [CxxMap.make(CxxString, uint32_t), 0x158], // assumed, enumValueLookup-0x10
+    enumValueLookup: [CxxMap.make(CxxString, uint64_as_float_t), 0x168], // accessed in CommandRegistry::findEnumValue
     // commandSymbols: [CxxVector.make(CommandRegistry.Symbol), 0x170],
-    signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 0x1a8], // accessed in CommandRegistry::findCommand
-    softEnums: [CxxVector.make(CommandRegistry.SoftEnum), 0x228], // accessed in CommandRegistry::addSoftEnum after `call CommandRegistry::addSoftEnumValues`
-    softEnumLookup: [CxxMap.make(CxxString, uint32_t), 0x240], // accessed in CommandRegistry::addSoftEnum early part
+    signatures: [CxxMap.make(CxxString, CommandRegistry.Signature), 0x1b0], // accessed in CommandRegistry::findCommand
+    softEnums: [CxxVector.make(CommandRegistry.SoftEnum), 0x230], // accessed in CommandRegistry::addSoftEnum after `call CommandRegistry::addSoftEnumValues`
+    softEnumLookup: [CxxMap.make(CxxString, uint32_t), 0x248], // accessed in CommandRegistry::addSoftEnum early part
 });
 CommandRegistry.prototype.registerOverloadInternal = procHacker.js(
     "?registerOverloadInternal@CommandRegistry@@AEAAXAEAUSignature@1@AEAUOverload@1@@Z",

@@ -411,9 +411,23 @@ export class ItemStackBase extends NativeClass {
     isArmorItem(): boolean {
         abstract();
     }
+
     isWearableItem(): boolean {
+        return this.isHumanoidWearableItem() || this.isHumanoidWearableBlockItem() || this.isHumanoidWearableArmorItem();
+    }
+
+    isHumanoidWearableItem(): boolean {
         abstract();
     }
+
+    isHumanoidWearableBlockItem(): boolean {
+        abstract();
+    }
+
+    isHumanoidWearableArmorItem(): boolean {
+        abstract();
+    }
+
     getMaxDamage(): number {
         abstract();
     }

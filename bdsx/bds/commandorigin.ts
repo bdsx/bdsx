@@ -5,11 +5,10 @@ import { abstract } from "../common";
 import { VoidPointer } from "../core";
 import { mce } from "../mce";
 import { AbstractClass, nativeClass, nativeField, vectorDeletingDestructor } from "../nativeclass";
-import { CxxString, int32_t, NativeType, uint8_t, void_t } from "../nativetype";
+import { CxxString, NativeType, int32_t, uint8_t, void_t } from "../nativetype";
 import { procHacker } from "../prochacker";
 import { Actor, DimensionId } from "./actor";
 import type { CommandPermissionLevel, CommandPositionFloat } from "./command";
-import { JsonValue } from "./connreq";
 import { Dimension } from "./dimension";
 import { Level, ServerLevel } from "./level";
 import { CompoundTag } from "./nbt";
@@ -102,13 +101,9 @@ export class CommandOrigin extends AbstractClass {
      * return the command result
      */
     handleCommandOutputCallback(value: unknown & CommandResult.Any, statusCode?: number, statusMessage?: string): void {
-        if (statusCode == null) statusCode = value.statusCode;
-        if (statusMessage == null) statusMessage = value.statusMessage;
-        const v = capi.malloc(JsonValue[NativeType.size]).as(JsonValue);
-        v.constructWith(value);
-        handleCommandOutputCallback.call(this, statusCode, statusMessage, v);
-        v.destruct();
-        capi.free(v);
+        if (statusCode === undefined) statusCode = value.statusCode;
+        if (statusMessage === undefined) statusMessage = value.statusMessage;
+        handleCommandOutputCallback.call(this, statusCode, statusMessage);
     }
 
     /**
@@ -252,12 +247,11 @@ CommandOrigin.prototype.getOriginType = procHacker.jsv(
 // void CommandOrigin::handleCommandOutputCallback(int, std::string &&, Json::Value &&) const
 const handleCommandOutputCallback = procHacker.jsv(
     "??_7ScriptCommandOrigin@@6B@",
-    "?handleCommandOutputCallback@ScriptCommandOrigin@@UEBAXH$$QEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@$$QEAVValue@Json@@@Z",
+    "?handleCommandOutputCallback@ScriptCommandOrigin@@UEBAXH$$QEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
     void_t,
     { this: CommandOrigin },
     int32_t,
     CxxString,
-    JsonValue,
 );
 
 // struct CompoundTag CommandOrigin::serialize(void)
