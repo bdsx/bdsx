@@ -1986,12 +1986,6 @@ PlayerListEntry.constructWith = function (player: Player): PlayerListEntry {
 };
 PlayerListEntry.prototype[NativeType.dtor] = procHacker.js("??1PlayerListEntry@@QEAA@XZ", void_t, { this: PlayerListEntry });
 
-/* ItemStackRequestPacket.prototype.getRequestBatch = procHacker.js(
-    "?getRequestBatch@ItemStackRequestPacket@@QEBAAEBVItemStackRequestBatch@@XZ",
-    ItemStackRequestBatch,
-    { this: ItemStackRequestPacket },
-); */
-
 // networkidentifier.ts
 NetworkIdentifier.prototype.getActor = function (): ServerPlayer | null {
     return bedrockServer.serverNetworkHandler._getServerPlayer(this, 0);
