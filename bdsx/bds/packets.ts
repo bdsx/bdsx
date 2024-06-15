@@ -1857,6 +1857,7 @@ export namespace PlayerAuthInputPacket {
     export enum InputData {
         Ascend,
         Descend,
+        /** @deprecated removed */
         NorthJump,
         JumpDown,
         SprintDown,
@@ -1903,7 +1904,8 @@ export namespace PlayerAuthInputPacket {
         IsInClientPredictedVehicle,
         PaddingLeft,
         PaddingRight,
-        INPUT_NUM,
+        BlockBreakingDelayEnabled,
+        INPUT_NUM = 49,
     }
 }
 
@@ -2454,7 +2456,11 @@ export class SetHudPacket extends Packet {
     visibility: HudVisibility;
 }
 
-export namespace SetHudPacket {}
+@nativeClass(null)
+export class AwardAchievementPacket extends Packet {
+    // unknown
+}
+
 export const PacketIdToType = {
     0x01: LoginPacket,
     0x02: PlayStatusPacket,
@@ -2660,6 +2666,7 @@ export const PacketIdToType = {
     0x132: PlayerToggleCrafterSlotRequestPacket,
     0x133: SetPlayerInventoryOptionsPacket,
     0x134: SetHudPacket,
+    0x135: AwardAchievementPacket,
 };
 export type PacketIdToType = {
     [key in keyof typeof PacketIdToType]: InstanceType<(typeof PacketIdToType)[key]>;

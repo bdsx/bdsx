@@ -44,8 +44,10 @@ export namespace Enchant {
         CrossbowQuickCharge,
         SoulSpeed,
 
-        NumEnchantments,
-        InvalidEnchantment,
+        /** @deprecated */
+        NumEnchantments = -1,
+        /** @deprecated */
+        InvalidEnchantment = -1,
     }
 }
 
@@ -88,6 +90,9 @@ export enum EnchantmentNames {
     QuickCharge = 35,
     SoulSpeed = 36,
     SwiftSneak = 37,
+    WindBurst = 38,
+    Desnsity = 39,
+    Breach = 40,
 }
 
 export type Enchantments = EnchantmentNames | Enchant.Type;
