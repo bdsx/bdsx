@@ -37,4 +37,5 @@ import "./storage";
 import "./test";
 import "./vulnerabilities";
 import "./shoot-projectile";
+import "./camera-test";
 // import './permissions';
