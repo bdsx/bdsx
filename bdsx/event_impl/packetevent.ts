@@ -108,7 +108,7 @@ function onPacketBefore(rbp: OnPacketRBP, returnAddressInStack: StaticPointer, p
         remapAndPrintError(err);
     }
 }
-function onPacketAfter(packet: Packet, ni: NetworkIdentifier, packetId: MinecraftPacketIds): void {
+function onPacketAfter(packet: Packet, conn: NetworkConnection, packetId: MinecraftPacketIds): void {
     try {
         const target = events.packetAfter(packetId);
         if (target === null || target.isEmpty()) throw Error("no listener but onPacketAfter fired.");
@@ -117,7 +117,7 @@ function onPacketAfter(packet: Packet, ni: NetworkIdentifier, packetId: Minecraf
         try {
             for (const listener of target.allListeners()) {
                 try {
-                    if (listener(typedPacket, ni, packetId) === CANCEL) {
+                    if (listener(typedPacket, conn.networkIdentifier, packetId) === CANCEL) {
                         break;
                     }
                 } catch (err) {
@@ -223,7 +223,7 @@ bedrockServer.withLoading().then(() => {
     );
 
     // hook after
-    asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, Packet, NetworkIdentifier, int32_t);
+    asmcode.onPacketAfter = makefunc.np(onPacketAfter, void_t, null, Packet, NetworkConnection, int32_t);
     asmcode.handlePacket = proc[packetHandleSymbol];
     asmcode.__guard_dispatch_icall_fptr = proc["__guard_dispatch_icall_fptr"].getPointer();
 

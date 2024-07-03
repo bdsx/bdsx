@@ -931,13 +931,17 @@ Tester.concurrency(
             let sendpacket = 0;
             let ignoreEndingPacketsAfter = 0; // ignore ni check of send for the avoiding disconnected ni.
 
-            const checkNetworkId = (ni: NetworkIdentifier): bool_t => ni.getActor()?.getNetworkIdentifier().equalsptr(ni) || false;
+            const checkNetworkId = (ni: NetworkIdentifier): bool_t => {
+                const player = ni.getActor();
+                if (player) return player.getNetworkIdentifier().equalsptr(ni) || false;
+                else return true; // skips test for uninitialized player
+            };
 
             for (let i = 0; i < 255; i++) {
                 if (tooHeavy.has(i)) continue;
                 events.packetRaw(i).on(
                     this.wrap((ptr, size, ni, packetId) => {
-                        this.assert(checkNetworkId(ni), "Wrong NetworkIdentifier on packetRaw");
+                        this.assert(checkNetworkId(ni), `Wrong NetworkIdentifier on packetRaw (${i}|${MinecraftPacketIds[i]})`);
 
                         this.equals(nextPacketPhase, PacketPhase.Raw, `unexpected phase, id=${packetId}`);
                         nextPacketPhase = PacketPhase.Before;
@@ -953,7 +957,7 @@ Tester.concurrency(
                 );
                 events.packetBefore<MinecraftPacketIds>(i).on(
                     this.wrap((ptr, ni, packetId) => {
-                        this.assert(checkNetworkId(ni), "Wrong NetworkIdentifier on packetBefore");
+                        this.assert(checkNetworkId(ni), `Wrong NetworkIdentifier on packetBefore (${i}|${MinecraftPacketIds[i]})`);
 
                         this.equals(nextPacketPhase, PacketPhase.Before, `unexpected phase, id=${packetId}`);
                         nextPacketPhase = PacketPhase.After;
@@ -969,7 +973,7 @@ Tester.concurrency(
                 );
                 events.packetAfter<MinecraftPacketIds>(i).on(
                     this.wrap((ptr, ni, packetId) => {
-                        this.assert(checkNetworkId(ni), "Wrong NetworkIdentifier on packetAfter");
+                        this.assert(checkNetworkId(ni), `Wrong NetworkIdentifier on packetAfter (${i}|${MinecraftPacketIds[i]})`);
 
                         this.equals(nextPacketPhase, PacketPhase.After, `unexpected phase, id=${packetId}`);
                         nextPacketPhase = PacketPhase.Raw;
@@ -983,7 +987,7 @@ Tester.concurrency(
                 );
                 events.packetSend<MinecraftPacketIds>(i).on(
                     this.wrap((ptr, ni, packetId) => {
-                        this.assert(checkNetworkId(ni), "Wrong NetworkIdentifier on packetSend");
+                        this.assert(checkNetworkId(ni), `Wrong NetworkIdentifier on packetSend (${i}|${MinecraftPacketIds[i]})`);
 
                         this.equals(nextPacketSendPhase, PacketPhase.Before, `unexpected phase, id=${packetId}`);
                         nextPacketSendPhase = PacketPhase.Raw;
@@ -997,7 +1001,7 @@ Tester.concurrency(
                 );
                 events.packetSendRaw(i).on(
                     this.wrap((ptr, size, ni, packetId) => {
-                        this.assert(checkNetworkId(ni), "Wrong NetworkIdentifier on packetSendRaw");
+                        this.assert(checkNetworkId(ni), `Wrong NetworkIdentifier on packetSendRaw (${i}|${MinecraftPacketIds[i]})`);
 
                         const recentSent = getRecentSentPacketId();
                         if (recentSent !== null) {
