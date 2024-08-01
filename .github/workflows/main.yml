@@ -35,4 +35,4 @@ jobs:
             - name: Prettier
               run: |
                   npm list --depth=0 prettier
-                  npm run prettier-bdsx
+                  npm run prettier-check
